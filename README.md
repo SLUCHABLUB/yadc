@@ -32,44 +32,48 @@ unless their features violate the aforementioned principles.
 
 ## Supported Traits
 
-- `Borrow` & `BorrowMut`: WIP
-- `Copy`: WIP
-- `Clone`: WIP
-- `Eq`: WIP
-- `Ord`: WIP
-- `PartialEq`: WIP 
-- `PartialOrd`: WIP 
-- `AsRef` & `AsMut`: WIP 
-- `From`: WIP
-- `TryFrom`: WIP
-- `Default`: WIP
-- `Error`: WIP
-- `Binary`, `Debug`, `Display`, `LowerExp`, `LowerHex`, `Octal`, `Pointer`, `UpperExp` & `UpperHex`: WIP
-- `Hash`: WIP
-- `Product` & `Sum`: WIP
-- `Copy`: WIP
-- `Add` & `Sub`: WIP
-- `AddAssign` & `SubAssign`: WIP
-- `BitAnd`: WIP
-- `BitAndAssign`: WIP
-- `BitOr`: WIP
-- `BitOrAssign`: WIP
-- `BitXor`: WIP
-- `BitXorAssign`: WIP
-- `Deref` & `DerefMut`: WIP
-- `Div`: WIP
-- `DivAssign`: WIP
-- `Mul`: WIP
-- `MulAssign`: WIP
-- `Neg` & `Not`: WIP
-- `Rem`: WIP
-- `RemAssign`: WIP
-- `Shl`: WIP
-- `ShlAssign`: WIP
-- `Shr`: WIP
-- `ShrAssign`: WIP
-- `Random`: WIP
-- `FromStr`: WIP
+|           Trait           |    Support     |
+|:-------------------------:|:--------------:|
+|       `Borrow(Mut)`       |      WIP       |
+|          `Copy`           |      WIP       |
+|          `Clone`          |      WIP       |
+|           `Eq`            |      WIP       |
+|           `Ord`           |      WIP       |
+|        `PartialEq`        |      WIP       |
+|       `PartialOrd`        |      WIP       |
+|          `As***`          |      WIP       |
+|          `From`           |      WIP       |
+|         `TryFrom`         |      WIP       |
+|         `Default`         |      WIP       |
+|          `Error`          |      WIP       |
+|      `Display`-like*      |      WIP       |
+|          `Debug`          | `derive`-level |
+|          `Hash`           |      WIP       |
+|     `Sum` & `Product`     |      WIP       |
+|       `Add` & `Sub`       |      WIP       |
+| `AddAssign` & `SubAssign` |      WIP       |
+|         `BitAnd`          |      WIP       |
+|      `BitAndAssign`       |      WIP       |
+|          `BitOr`          |      WIP       |
+|       `BitOrAssign`       |      WIP       |
+|         `BitXor`          |      WIP       |
+|      `BitXorAssign`       |      WIP       |
+|   `Deref` & `DerefMut`    |      WIP       |
+|           `Div`           |      WIP       |
+|        `DivAssign`        |      WIP       |
+|           `Mul`           |      WIP       |
+|        `MulAssign`        |      WIP       |
+|       `Neg` & `Not`       |      WIP       |
+|           `Rem`           |      WIP       |
+|        `RemAssign`        |      WIP       |
+|           `Shl`           |      WIP       |
+|        `ShlAssign`        |      WIP       |
+|           `Shr`           |      WIP       |
+|        `ShrAssign`        |      WIP       |
+|         `Random`          |      WIP       |
+|         `FromStr`         |      WIP       |
+
+\*`Binary`, `Display`, `LowerExp`, `LowerHex`, `Octal`, `Pointer`, `UpperExp` & `UpperHex`
 
 If any trait is missing from this list, please open an issue.
 
