@@ -39,7 +39,7 @@ pub fn field_names(fields: &Fields) -> Vec<Ident> {
 /// Extract the name from a generic parameter (converts it to an argument).
 ///
 /// | parameter kind | input example | output |
-/// | :------------: | :-----------: | :----: |
+/// | :------------- | :------------ | :----- |
 /// | lifetime       | `'a: 'b`      | `'a`   |
 /// | type           | `T: Trait`    | `T`    |
 /// | constant       | `const N: u8` | `N`    |
