@@ -13,7 +13,7 @@ pub enum Trait {
 }
 
 impl Trait {
-    pub fn implement(self, item: &AlgebraicItem) -> Result<TokenStream> {
+    pub fn implement(self, item: &AlgebraicItem) -> TokenStream {
         match self {
             Trait::Debug => implement_debug(item),
         }

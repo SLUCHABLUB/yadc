@@ -5,7 +5,9 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Comma;
-use syn::{Error, Fields, GenericArgument, Generics, Item, ItemEnum, ItemStruct, Result, Type, WhereClause};
+use syn::{
+    Error, Fields, GenericArgument, Generics, Item, ItemEnum, ItemStruct, Result, Type, WhereClause,
+};
 
 const BAD_ITEM_KIND: &str = "yadc can only implement traits for enums and structs";
 const NON_EXHAUSTIVE: &str = "item kind is not recognised, please open an issue";
@@ -35,18 +37,17 @@ impl AlgebraicItem {
     }
 
     pub fn arguments(&self) -> Punctuated<GenericArgument, Comma> {
-        self.generics()
-            .params
-            .iter()
-            .map(to_argument)
-            .collect()
+        self.generics().params.iter().map(to_argument).collect()
     }
-    
+
     pub fn type_arguments(&self) -> Vec<Ident> {
-        self.arguments().into_iter().filter_map(|argument| match argument {
-            GenericArgument::Type(Type::Path(path)) => path.path.get_ident().cloned(),
-            _ => None
-        }).collect()
+        self.arguments()
+            .into_iter()
+            .filter_map(|argument| match argument {
+                GenericArgument::Type(Type::Path(path)) => path.path.get_ident().cloned(),
+                _ => None,
+            })
+            .collect()
     }
 
     pub fn where_clause(&self) -> Option<&WhereClause> {

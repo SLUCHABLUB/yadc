@@ -1,3 +1,5 @@
+#![deny(clippy::pedantic)]
+
 mod algebraic;
 mod r#trait;
 mod util;
@@ -33,7 +35,7 @@ fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream>
     let mut output = quote_spanned! { item_span => #item };
 
     for r#trait in traits {
-        output.extend(r#trait.implement(&item)?);
+        output.extend(r#trait.implement(&item));
     }
 
     Ok(output)

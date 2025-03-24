@@ -50,6 +50,9 @@ fn debug_default() {
 
     assert_eq!(format!("{:?}", Alice()), "Alice");
     assert_eq!(format!("{:?}", Bob {}), "Bob");
-    
-    assert_eq!(format!("{:?}", Generic { a: 42, b: 3 }), "Generic { a: 42, b: 3 }")
+
+    assert_eq!(
+        format!("{:?}", Generic { a: 42, b: 3 }),
+        "Generic { a: 42, b: 3 }"
+    )
 }

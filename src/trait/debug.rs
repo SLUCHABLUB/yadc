@@ -2,11 +2,11 @@ use crate::algebraic::AlgebraicItem;
 use crate::util::{field_names, new_path, with_bound};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Fields, Result};
+use syn::Fields;
 
-pub fn implement_debug(item: &AlgebraicItem) -> Result<TokenStream> {
+pub fn implement_debug(item: &AlgebraicItem) -> TokenStream {
     let trait_path = new_path(["core", "fmt", "Debug"]);
-    
+
     let name = item.name();
     let parameters = item.parameters();
     let arguments = item.arguments();
@@ -18,13 +18,13 @@ pub fn implement_debug(item: &AlgebraicItem) -> Result<TokenStream> {
 
     let body = item.map_variants(|name, field| debug_variant(name, field, non_exhaustive));
 
-    Ok(quote! {
+    quote! {
         impl<#parameters> #trait_path for #name<#arguments> #where_clause {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 #body
             }
         }
-    })
+    }
 }
 
 fn debug_variant(name: &Ident, fields: &Fields, non_exhaustive: bool) -> TokenStream {
