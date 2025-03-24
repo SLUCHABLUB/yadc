@@ -19,7 +19,7 @@ pub fn implement_debug(item: &AlgebraicItem) -> Result<TokenStream> {
     let body = item.map_variants(|name, field| debug_variant(name, field, non_exhaustive));
 
     Ok(quote! {
-        impl<#parameters> core::fmt::Debug for #name<#arguments> #where_clause {
+        impl<#parameters> #trait_path for #name<#arguments> #where_clause {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 #body
             }
