@@ -1,14 +1,17 @@
 use crate::algebraic::AlgebraicItem;
-use crate::util::field_names;
+use crate::util::{field_names, new_path, with_bound};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::{Fields, Result};
 
 pub fn implement_debug(item: &AlgebraicItem) -> Result<TokenStream> {
+    let trait_path = new_path(["core", "fmt", "Debug"]);
+    
     let name = item.name();
     let parameters = item.parameters();
     let arguments = item.arguments();
-    let where_clause = item.where_clause();
+    let type_arguments = item.type_arguments();
+    let where_clause = with_bound(item.where_clause().cloned(), &type_arguments, &trait_path);
 
     // TODO: read from attributes
     let non_exhaustive = false;

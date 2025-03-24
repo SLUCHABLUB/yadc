@@ -25,6 +25,12 @@ struct Alice();
 #[implement(Debug)]
 struct Bob {}
 
+#[implement(Debug)]
+struct Generic<A, B: Copy> {
+    a: A,
+    b: B,
+}
+
 /// Test that the default behaviour matches `derive(Debug)`.
 #[test]
 fn debug_default() {
@@ -44,4 +50,6 @@ fn debug_default() {
 
     assert_eq!(format!("{:?}", Alice()), "Alice");
     assert_eq!(format!("{:?}", Bob {}), "Bob");
+    
+    assert_eq!(format!("{:?}", Generic { a: 42, b: 3 }), "Generic { a: 42, b: 3 }")
 }
