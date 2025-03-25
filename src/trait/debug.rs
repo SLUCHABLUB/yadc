@@ -27,6 +27,7 @@ pub fn implement_debug(parameterised: &Parameterised) -> TokenStream {
     let body = item.map_variants(|variant| debug_variant(variant, non_exhaustive));
 
     quote! {
+        #[automatically_derived]
         impl<#parameters> #trait_path for #name<#arguments> #where_clause {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 #body
