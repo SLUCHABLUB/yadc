@@ -1,17 +1,21 @@
 #![deny(clippy::pedantic)]
 
 mod algebraic;
+mod attribute;
+mod field;
+mod parameterised;
 mod r#trait;
 mod util;
+mod variant;
 
 extern crate proc_macro;
 
-use crate::algebraic::AlgebraicItem;
+use crate::parameterised::Parameterised;
 use crate::r#trait::List;
 use proc_macro2::TokenStream;
 use quote::quote_spanned;
 use syn::spanned::Spanned;
-use syn::{Result, parse2};
+use syn::{Item, Result, parse2};
 
 #[proc_macro_attribute]
 pub fn implement(
@@ -30,12 +34,15 @@ fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream>
     let item_span = item.span();
 
     let traits = parse2::<List>(attribute)?;
-    let item = parse2::<AlgebraicItem>(item)?;
+    let item = parse2::<Item>(item)?;
 
+    // TODO: remove helper attributes
     let mut output = quote_spanned! { item_span => #item };
 
+    let parameterised = Parameterised::try_from(item)?;
+
     for r#trait in traits {
-        output.extend(r#trait.implement(&item));
+        output.extend(r#trait.implement(&parameterised));
     }
 
     Ok(output)

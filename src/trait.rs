@@ -1,6 +1,6 @@
 mod debug;
 
-use crate::algebraic::AlgebraicItem;
+use crate::parameterised::Parameterised;
 use crate::r#trait::debug::implement_debug;
 use proc_macro2::TokenStream;
 use syn::parse::{Parse, ParseStream};
@@ -13,17 +13,17 @@ pub enum Trait {
 }
 
 impl Trait {
-    pub fn implement(self, item: &AlgebraicItem) -> TokenStream {
+    pub fn implement(self, item: &Parameterised) -> TokenStream {
         match self {
             Trait::Debug => implement_debug(item),
         }
     }
 }
 
-impl Parse for Trait {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let path = input.parse::<PathSegment>()?;
+impl TryFrom<PathSegment> for Trait {
+    type Error = Error;
 
+    fn try_from(path: PathSegment) -> Result<Self> {
         let span = path.span();
 
         match (path.ident.to_string().as_str(), path.arguments) {
@@ -34,6 +34,12 @@ impl Parse for Trait {
                 format!("`{}` cannot (yet) be derived via yadc", path.ident),
             )),
         }
+    }
+}
+
+impl Parse for Trait {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Trait::try_from(PathSegment::parse(input)?)
     }
 }
 

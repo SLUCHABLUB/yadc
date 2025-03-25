@@ -1,22 +1,30 @@
-use crate::algebraic::AlgebraicItem;
-use crate::util::{field_names, new_path, with_bound};
-use proc_macro2::{Ident, TokenStream};
+use crate::field::Fields;
+use crate::parameterised::Parameterised;
+use crate::util::new_path;
+use crate::variant::Variant;
+use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Fields;
 
-pub fn implement_debug(item: &AlgebraicItem) -> TokenStream {
+pub fn implement_debug(parameterised: &Parameterised) -> TokenStream {
     let trait_path = new_path(["core", "fmt", "Debug"]);
 
+    #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
+    for attribute in parameterised.item.attributes() {
+        match *attribute {}
+    }
+
+    let item = &parameterised.item;
     let name = item.name();
-    let parameters = item.parameters();
-    let arguments = item.arguments();
-    let type_arguments = item.type_arguments();
-    let where_clause = with_bound(item.where_clause().cloned(), &type_arguments, &trait_path);
+    let parameters = &parameterised.parameters;
+    let arguments = parameterised.arguments();
+
+    let default_bound = parameterised.bound_all(&trait_path);
+    let where_clause = parameterised.where_clause_with_bounds(default_bound);
 
     // TODO: read from attributes
     let non_exhaustive = false;
 
-    let body = item.map_variants(|name, field| debug_variant(name, field, non_exhaustive));
+    let body = item.map_variants(|variant| debug_variant(variant, non_exhaustive));
 
     quote! {
         impl<#parameters> #trait_path for #name<#arguments> #where_clause {
@@ -27,29 +35,50 @@ pub fn implement_debug(item: &AlgebraicItem) -> TokenStream {
     }
 }
 
-fn debug_variant(name: &Ident, fields: &Fields, non_exhaustive: bool) -> TokenStream {
+fn debug_variant(variant: &Variant, non_exhaustive: bool) -> TokenStream {
+    let name = &variant.name;
+
+    #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
+    for attribute in &variant.attributes {
+        match *attribute {}
+    }
+
     let finish = if non_exhaustive {
         quote!(finish_non_exhaustive)
     } else {
         quote!(finish)
     };
-    let field_name = field_names(fields);
 
-    match fields {
-        Fields::Named(_) => quote! {
-            f.debug_struct(stringify!(#name))
-            #(
-                .field(stringify!(#field_name), #field_name)
-            )*
-            .#finish()
-        },
-        Fields::Unnamed(_) => quote! {
-            f.debug_tuple(stringify!(#name))
-            #(
-                .field(#field_name)
-            )*
-            .#finish()
-        },
-        Fields::Unit => quote! { core::write!(f, stringify!(#name)) },
+    let named;
+
+    let mut output = match variant.fields {
+        Fields::Named(_) => {
+            named = true;
+            quote!(f.debug_struct(stringify!(#name)))
+        }
+        Fields::Unnamed(_) => {
+            named = false;
+            quote!(f.debug_tuple(stringify!(#name)))
+        }
+        Fields::Unit => return quote! { core::write!(f, stringify!(#name)) },
+    };
+
+    for field in variant.fields.clone().into_named() {
+        #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
+        for attribute in &field.attributes {
+            match *attribute {}
+        }
+
+        let name = field.name;
+
+        output.extend(if named {
+            quote!(.field(stringify!(#name), #name))
+        } else {
+            quote!(.field(#name))
+        });
     }
+
+    output.extend(quote!(.#finish()));
+
+    output
 }
