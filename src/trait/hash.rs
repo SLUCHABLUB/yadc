@@ -2,23 +2,18 @@ use crate::algebraic::AlgebraicItem;
 use crate::field::NamedField;
 use crate::parameterised::Parameterised;
 use crate::util::{
-    Receiver, call_method, core_path, expression_path, new_identifier, new_impl_fn,
-    self_expression, single, token, type_named, unit_type, variable_named,
+    Receiver, call_method, core_path, expression_path, mutable_reference, new_identifier,
+    new_impl_fn, self_expression, single, token, type_named, unit_type, variable_named,
 };
 use crate::variant::Variant;
 use itertools::chain;
 use syn::{
     Expr, ExprCall, GenericParam, Generics, ImplItemFn, Stmt, TraitBound, TraitBoundModifier, Type,
-    TypeParam, TypeParamBound, TypeReference,
+    TypeParam, TypeParamBound,
 };
 
 pub fn state_type() -> Type {
-    Type::Reference(TypeReference {
-        and_token: token![&],
-        lifetime: None,
-        mutability: Some(token![mut]),
-        elem: Box::new(type_named(new_identifier("H"))),
-    })
+    mutable_reference(type_named(new_identifier("H")))
 }
 
 pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
