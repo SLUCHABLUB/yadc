@@ -1,68 +1,100 @@
 use crate::field::Fields;
 use crate::parameterised::Parameterised;
-use crate::util::new_path;
+use crate::util::{
+    Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, new_path, single, token,
+    variable_named,
+};
 use crate::variant::Variant;
-use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
+use std::iter::{Once, once};
+use syn::punctuated::Punctuated;
+use syn::{Expr, ExprMacro, Generics, ImplItemFn, Macro, MacroDelimiter, Stmt, Type, TypePath};
 
-pub fn implement_debug(parameterised: &Parameterised) -> TokenStream {
-    let trait_path = new_path(["core", "fmt", "Debug"]);
+fn core_fmt_result() -> Type {
+    Type::Path(TypePath {
+        qself: None,
+        path: new_path(["core", "fmt", "Result"]),
+    })
+}
 
+fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
+    let mac = Macro {
+        path: new_path(["core", "write"]),
+        bang_token: token![!],
+        delimiter: MacroDelimiter::Paren(token![()]),
+        tokens: quote!(f, #arguments),
+    };
+
+    Stmt::Expr(
+        Expr::Macro(ExprMacro {
+            attrs: Vec::new(),
+            mac,
+        }),
+        None,
+    )
+}
+
+fn core_stringify<T: ToTokens>(value: T) -> Expr {
+    let mac = Macro {
+        path: new_path(["core", "stringify"]),
+        bang_token: token![!],
+        delimiter: MacroDelimiter::Paren(token![()]),
+        tokens: value.to_token_stream(),
+    };
+
+    Expr::Macro(ExprMacro {
+        attrs: Vec::new(),
+        mac,
+    })
+}
+
+fn formatter_type() -> Type {
+    mutable_reference(Type::Path(TypePath {
+        qself: None,
+        path: new_path(["core", "fmt", "Formatter"]),
+    }))
+}
+
+pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
     #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
     for attribute in parameterised.item.attributes() {
         match *attribute {}
     }
 
-    let item = &parameterised.item;
-    let name = item.name();
-    let parameters = &parameterised.parameters;
-    let arguments = parameterised.arguments();
-
-    let default_bound = parameterised.bound_all(&trait_path);
-    let where_clause = parameterised.where_clause_with_bounds(default_bound);
-
     // TODO: read from attributes
     let non_exhaustive = false;
 
-    let body = item.map_variants(|variant| debug_variant(variant, non_exhaustive));
+    let statements = parameterised
+        .item
+        .map_variants(|variant| debug_variant(variant, non_exhaustive));
 
-    quote! {
-        #[automatically_derived]
-        impl<#parameters> #trait_path for #name<#arguments> #where_clause {
-            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                #body
-            }
-        }
-    }
+    new_impl_fn(
+        new_identifier("fmt"),
+        Generics::default(),
+        Receiver::Reference,
+        [(new_identifier("f"), formatter_type())],
+        core_fmt_result(),
+        statements,
+    )
 }
 
-fn debug_variant(variant: &Variant, non_exhaustive: bool) -> TokenStream {
-    let name = &variant.name;
+fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
+    let name_string = core_stringify(&variant.name);
 
     #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
     for attribute in &variant.attributes {
         match *attribute {}
     }
 
-    let finish = if non_exhaustive {
-        quote!(finish_non_exhaustive)
-    } else {
-        quote!(finish)
+    let mut expression = variable_named(new_identifier("f"));
+
+    let debugger = match variant.fields {
+        Fields::Named(_) => new_identifier("debug_struct"),
+        Fields::Unnamed(_) => new_identifier("debug_tuple"),
+        Fields::Unit => return once(core_write_f(name_string)),
     };
 
-    let named;
-
-    let mut output = match variant.fields {
-        Fields::Named(_) => {
-            named = true;
-            quote!(f.debug_struct(stringify!(#name)))
-        }
-        Fields::Unnamed(_) => {
-            named = false;
-            quote!(f.debug_tuple(stringify!(#name)))
-        }
-        Fields::Unit => return quote! { core::write!(f, stringify!(#name)) },
-    };
+    expression = call_method(expression, debugger, single(name_string));
 
     for field in variant.fields.clone().into_named() {
         #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
@@ -70,16 +102,24 @@ fn debug_variant(variant: &Variant, non_exhaustive: bool) -> TokenStream {
             match *attribute {}
         }
 
-        let name = field.name;
-
-        output.extend(if named {
-            quote!(.field(stringify!(#name), #name))
+        let mut args = if matches!(variant.fields, Fields::Named(_)) {
+            single(core_stringify(&field.name))
         } else {
-            quote!(.field(#name))
-        });
+            Punctuated::new()
+        };
+
+        args.push(variable_named(field.name));
+
+        expression = call_method(expression, new_identifier("field"), args);
     }
 
-    output.extend(quote!(.#finish()));
+    let finish = if non_exhaustive {
+        new_identifier("finish_non_exhaustive")
+    } else {
+        new_identifier("finish")
+    };
 
-    output
+    expression = call_method(expression, finish, Punctuated::new());
+
+    once(Stmt::Expr(expression, None))
 }

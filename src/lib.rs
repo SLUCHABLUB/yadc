@@ -13,7 +13,7 @@ extern crate proc_macro;
 use crate::parameterised::Parameterised;
 use crate::r#trait::List;
 use proc_macro2::TokenStream;
-use quote::quote_spanned;
+use quote::{ToTokens, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{Item, Result, parse2};
 
@@ -42,7 +42,7 @@ fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream>
     let parameterised = Parameterised::try_from(item)?;
 
     for r#trait in traits {
-        output.extend(r#trait.implement(&parameterised));
+        output.extend(r#trait.implement(&parameterised).to_token_stream());
     }
 
     Ok(output)

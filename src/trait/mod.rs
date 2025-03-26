@@ -1,21 +1,62 @@
 mod debug;
+mod hash;
 
 use crate::parameterised::Parameterised;
-use crate::r#trait::debug::implement_debug;
-use proc_macro2::TokenStream;
+use crate::util::{new_path, token};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::{IntoIter, Punctuated};
 use syn::spanned::Spanned;
-use syn::{Error, PathArguments, PathSegment, Result, Token};
+use syn::{
+    AttrStyle, Attribute, Error, Generics, ItemImpl, Meta, Path, PathArguments, PathSegment,
+    Result, Token,
+};
+
+fn automatically_derived() -> Attribute {
+    Attribute {
+        pound_token: token![#],
+        style: AttrStyle::Outer,
+        bracket_token: token![[]],
+        meta: Meta::Path(new_path(["automatically_derived"])),
+    }
+}
 
 pub enum Trait {
     Debug,
+    Hash,
 }
 
 impl Trait {
-    pub fn implement(self, item: &Parameterised) -> TokenStream {
+    pub fn implement(self, item: &Parameterised) -> ItemImpl {
+        let items = match self {
+            Trait::Debug => vec![debug::fmt(item).into()],
+            Trait::Hash => vec![hash::hash(item).into()],
+        };
+
+        let bounds = item.bound_all(self.path());
+        let where_clause = item.where_clause_with_bounds(bounds);
+
+        ItemImpl {
+            attrs: vec![automatically_derived()],
+            defaultness: None,
+            unsafety: None,
+            impl_token: token![impl],
+            generics: Generics {
+                lt_token: Some(token![<]),
+                params: item.parameters.clone(),
+                gt_token: Some(token![>]),
+                where_clause: Some(where_clause),
+            },
+            trait_: Some((None, self.path(), token![for])),
+            self_ty: Box::new(item.to_type()),
+            brace_token: token![{}],
+            items,
+        }
+    }
+
+    pub fn path(&self) -> Path {
         match self {
-            Trait::Debug => implement_debug(item),
+            Trait::Debug => new_path(["core", "fmt", "Debug"]),
+            Trait::Hash => new_path(["core", "hash", "Hash"]),
         }
     }
 }
@@ -28,6 +69,7 @@ impl TryFrom<PathSegment> for Trait {
 
         match (path.ident.to_string().as_str(), path.arguments) {
             ("Debug", PathArguments::None) => Ok(Trait::Debug),
+            ("Hash", PathArguments::None) => Ok(Trait::Hash),
 
             _ => Err(Error::new(
                 span,

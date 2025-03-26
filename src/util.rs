@@ -1,10 +1,102 @@
-use proc_macro2::{Ident, Span};
+use proc_macro2::{Ident, Span, TokenStream};
 use std::iter::once;
 use syn::punctuated::Punctuated;
-use syn::{Expr, ExprPath, GenericArgument, GenericParam, Path, PathSegment, Type, TypePath};
+use syn::{
+    Block, Expr, ExprMethodCall, ExprPath, FnArg, GenericArgument, GenericParam, Generics,
+    ImplItemFn, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt, Token,
+    Type, TypePath, TypeReference, TypeTuple, Visibility,
+};
+
+macro_rules! token {
+    [()] => { syn::token::Paren::default() };
+    [[]] => { syn::token::Bracket::default() };
+    [{}] => { syn::token::Brace::default() };
+    [$token:tt] => { <syn::Token![$token]>::default() };
+}
+
+pub(crate) use token;
+
+pub fn new_identifier(string: &str) -> Ident {
+    Ident::new(string, Span::call_site())
+}
+
+#[derive(Copy, Clone)]
+pub enum Receiver {
+    Reference,
+}
+
+/// Constructs a [`ItemFn`]
+pub fn new_impl_fn<const PARAMETERS: usize, Statements>(
+    name: Ident,
+    generics: Generics,
+    receiver: Receiver,
+    parameters: [(Ident, Type); PARAMETERS],
+    return_type: Type,
+    statements: Statements,
+) -> ImplItemFn
+where
+    Statements: IntoIterator<Item = Stmt>,
+{
+    let mut inputs = Punctuated::new();
+
+    match receiver {
+        Receiver::Reference => {
+            inputs.push(FnArg::Receiver(syn::Receiver {
+                attrs: Vec::new(),
+                reference: Some((token![&], None)),
+                mutability: None,
+                self_token: token![self],
+                colon_token: None,
+                ty: Box::new(Type::Verbatim(TokenStream::new())),
+            }));
+        }
+    }
+
+    for (parameter, ty) in parameters {
+        inputs.push(FnArg::Typed(PatType {
+            attrs: Vec::new(),
+            pat: Box::new(variable_pattern(parameter)),
+            colon_token: token![:],
+            ty: Box::new(ty),
+        }));
+    }
+
+    let sig = Signature {
+        constness: None,
+        asyncness: None,
+        unsafety: None,
+        abi: None,
+        fn_token: token![fn],
+        ident: name,
+        generics,
+        paren_token: token![()],
+        inputs,
+        variadic: None,
+        output: ReturnType::Type(token![->], Box::new(return_type)),
+    };
+
+    ImplItemFn {
+        attrs: Vec::new(),
+        vis: Visibility::Inherited,
+        defaultness: None,
+        sig,
+        block: Block {
+            brace_token: token![{}],
+            stmts: statements.into_iter().collect(),
+        },
+    }
+}
 
 pub fn type_named(name: Ident) -> Type {
     Type::Path(TypePath {
+        qself: None,
+        path: Path::from(name),
+    })
+}
+
+pub fn variable_named(name: Ident) -> Expr {
+    Expr::Path(ExprPath {
+        attrs: Vec::new(),
         qself: None,
         path: Path::from(name),
     })
@@ -41,4 +133,58 @@ pub fn to_argument(parameter: GenericParam) -> GenericArgument {
             path: Path::from(constant.ident),
         })),
     }
+}
+
+pub fn unit_type() -> Type {
+    Type::Tuple(TypeTuple {
+        paren_token: token![()],
+        elems: Punctuated::new(),
+    })
+}
+
+pub fn self_expression() -> Expr {
+    Expr::Path(ExprPath {
+        attrs: Vec::new(),
+        qself: None,
+        path: new_path(["self"]),
+    })
+}
+
+pub fn variable_pattern(name: Ident) -> Pat {
+    Pat::Ident(PatIdent {
+        attrs: Vec::new(),
+        by_ref: None,
+        mutability: None,
+        ident: name,
+        subpat: None,
+    })
+}
+
+pub fn call_method(receiver: Expr, method: Ident, args: Punctuated<Expr, Token![,]>) -> Expr {
+    Expr::MethodCall(ExprMethodCall {
+        attrs: Vec::new(),
+        receiver: Box::new(receiver),
+        dot_token: token![.],
+        method,
+        turbofish: None,
+        paren_token: token![()],
+        args,
+    })
+}
+
+pub fn mutable_reference(referend: Type) -> Type {
+    Type::Reference(TypeReference {
+        and_token: token![&],
+        lifetime: None,
+        mutability: Some(token![mut]),
+        elem: Box::new(referend),
+    })
+}
+
+pub fn expression_path(path: Path) -> Expr {
+    Expr::Path(ExprPath {
+        attrs: Vec::new(),
+        qself: None,
+        path,
+    })
 }

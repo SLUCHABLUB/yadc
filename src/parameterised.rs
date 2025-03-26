@@ -1,14 +1,15 @@
 use crate::algebraic::AlgebraicItem;
-use crate::util::{single, to_argument, type_named};
+use crate::util::{single, to_argument, token, type_named};
 use crate::variant::Variant;
+use itertools::Itertools;
 use proc_macro2::Ident;
 use std::mem::take;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::token::{Colon, Comma, Where};
 use syn::{
-    Error, GenericArgument, GenericParam, Generics, Item, Path, PredicateType, TraitBound,
-    TraitBoundModifier, Type, TypeParamBound, WhereClause, WherePredicate,
+    AngleBracketedGenericArguments, Error, GenericArgument, GenericParam, Generics, Item, Path,
+    PathArguments, PathSegment, PredicateType, Token, TraitBound, TraitBoundModifier, Type,
+    TypeParamBound, TypePath, WhereClause, WherePredicate,
 };
 
 const BAD_ITEM_KIND: &str = "yadc can only implement traits for enums and structs";
@@ -17,21 +18,21 @@ const NON_EXHAUSTIVE: &str = "item kind is not recognised, please open an issue"
 /// An algebraic item with information about generics.
 pub struct Parameterised {
     pub item: AlgebraicItem,
-    pub parameters: Punctuated<GenericParam, Comma>,
-    pub where_stem: Punctuated<WherePredicate, Comma>,
+    pub parameters: Punctuated<GenericParam, Token![,]>,
+    pub where_stem: Punctuated<WherePredicate, Token![,]>,
 }
 
 impl Parameterised {
-    pub fn arguments(&self) -> Punctuated<GenericArgument, Comma> {
+    pub fn arguments(&self) -> Punctuated<GenericArgument, Token![,]> {
         self.parameters.iter().cloned().map(to_argument).collect()
     }
 
-    pub fn bound_all(&self, trait_path: &Path) -> Punctuated<WherePredicate, Comma> {
+    pub fn bound_all(&self, trait_path: Path) -> Punctuated<WherePredicate, Token![,]> {
         let bound = TypeParamBound::Trait(TraitBound {
             paren_token: None,
             modifier: TraitBoundModifier::None,
             lifetimes: None,
-            path: trait_path.clone(),
+            path: trait_path,
         });
 
         self.type_arguments()
@@ -39,7 +40,7 @@ impl Parameterised {
                 WherePredicate::Type(PredicateType {
                     lifetimes: None,
                     bounded_ty: type_named(ty),
-                    colon_token: Colon::default(),
+                    colon_token: token![:],
                     bounds: single(bound.clone()),
                 })
             })
@@ -57,27 +58,52 @@ impl Parameterised {
 
     pub fn where_clause_with_bounds(
         &self,
-        bounds: Punctuated<WherePredicate, Comma>,
+        bounds: Punctuated<WherePredicate, Token![,]>,
     ) -> WhereClause {
         let mut predicates = self.where_stem.clone();
         predicates.extend(bounds);
         WhereClause {
-            where_token: Where::default(),
+            where_token: token![where],
             predicates,
         }
+    }
+
+    pub fn to_type(&self) -> Type {
+        let arguments = self.type_arguments().collect_vec();
+        let arguments = if arguments.is_empty() {
+            PathArguments::None
+        } else {
+            PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                colon2_token: None,
+                lt_token: token![<],
+                args: self.arguments(),
+                gt_token: token![>],
+            })
+        };
+
+        Type::Path(TypePath {
+            qself: None,
+            path: Path {
+                leading_colon: None,
+                segments: single(PathSegment {
+                    ident: self.item.name().clone(),
+                    arguments,
+                }),
+            },
+        })
     }
 }
 
 fn extract(
     generics: &mut Generics,
 ) -> (
-    Punctuated<GenericParam, Comma>,
-    Punctuated<WherePredicate, Comma>,
+    Punctuated<GenericParam, Token![,]>,
+    Punctuated<WherePredicate, Token![,]>,
 ) {
     let generics = take(generics);
 
     let default = || WhereClause {
-        where_token: Where::default(),
+        where_token: token![where],
         predicates: Punctuated::new(),
     };
 

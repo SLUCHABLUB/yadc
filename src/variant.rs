@@ -1,11 +1,11 @@
 use crate::attribute::Attribute;
 use crate::field::Fields;
+use crate::util::{self_expression, token};
 use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
-use syn::token::{Brace, Comma, Paren};
 use syn::{
-    Error, FieldPat, ItemStruct, Member, Pat, PatIdent, PatPath, PatStruct, PatTupleStruct, Path,
-    Result,
+    Error, FieldPat, ItemStruct, Local, LocalInit, Member, Pat, PatIdent, PatPath, PatStruct,
+    PatTupleStruct, Path, PathSegment, Result, Stmt, Token,
 };
 
 /// A `struct` or an `enum` variant.
@@ -16,13 +16,39 @@ pub struct Variant {
 }
 
 impl Variant {
-    pub fn from_list(list: Punctuated<syn::Variant, Comma>) -> Result<Vec<Variant>> {
+    pub fn from_list(list: Punctuated<syn::Variant, Token![,]>) -> Result<Vec<Variant>> {
         list.into_iter().map(Variant::try_from).collect()
     }
 
+    pub fn destruct_self(&self) -> Stmt {
+        Stmt::Local(Local {
+            attrs: Vec::new(),
+            let_token: token![let],
+            pat: self.pattern(None),
+            init: Some(LocalInit {
+                eq_token: token![=],
+                expr: Box::new(self_expression()),
+                diverge: None,
+            }),
+            semi_token: token![;],
+        })
+    }
+
     /// The pattern to destruct this variant
-    pub fn pattern(&self) -> Pat {
-        let path = Path::from(self.name.clone());
+    pub fn pattern(&self, prefix: Option<Ident>) -> Pat {
+        let path = if let Some(prefix) = prefix {
+            Path {
+                leading_colon: None,
+                segments: [
+                    PathSegment::from(prefix),
+                    PathSegment::from(self.name.clone()),
+                ]
+                .into_iter()
+                .collect(),
+            }
+        } else {
+            Path::from(self.name.clone())
+        };
         let field_names = self.fields.names().into_iter();
 
         match self.fields {
@@ -30,7 +56,7 @@ impl Variant {
                 attrs: Vec::new(),
                 qself: None,
                 path,
-                brace_token: Brace::default(),
+                brace_token: token![{}],
                 fields: field_names
                     .map(|ident| FieldPat {
                         attrs: vec![],
@@ -45,7 +71,7 @@ impl Variant {
                 attrs: Vec::new(),
                 qself: None,
                 path,
-                paren_token: Paren::default(),
+                paren_token: token![()],
                 elems: field_names.map(pattern).collect(),
             }),
             Fields::Unit => Pat::Path(PatPath {

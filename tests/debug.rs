@@ -27,9 +27,9 @@ struct Alice();
 #[implement(Debug)]
 struct Bob {}
 
-#[implement(Debug)]
-struct Generic<A, B: Copy> {
-    a: A,
+#[derive(Debug)]
+struct Generic<'a, A, B: Copy> {
+    a: &'a A,
     b: B,
 }
 
@@ -54,7 +54,7 @@ fn debug_default() {
     assert_eq!(format!("{:?}", Bob {}), "Bob");
 
     assert_eq!(
-        format!("{:?}", Generic { a: 42, b: 3 }),
+        format!("{:?}", Generic { a: &42, b: 3 }),
         "Generic { a: 42, b: 3 }"
     )
 }

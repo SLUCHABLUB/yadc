@@ -1,7 +1,8 @@
 mod named;
 mod unnamed;
 
-use crate::field::named::NamedField;
+pub use named::NamedField;
+
 use crate::field::unnamed::UnnamedField;
 use itertools::Itertools;
 use proc_macro2::Ident;
