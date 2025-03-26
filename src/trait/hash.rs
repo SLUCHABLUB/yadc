@@ -1,9 +1,10 @@
 use crate::algebraic::AlgebraicItem;
 use crate::field::NamedField;
 use crate::parameterised::Parameterised;
+use crate::path;
 use crate::util::{
-    Receiver, call_function, core_path, dual, mutable_reference, new_identifier, new_impl_fn,
-    reference, self_expression, single, token, type_named, unit_type, variable_named,
+    Receiver, call_function, dual, mutable_reference, new_identifier, new_impl_fn, reference,
+    self_expression, single, token, type_named, unit_type, variable_named,
 };
 use crate::variant::Variant;
 use itertools::chain;
@@ -44,7 +45,7 @@ fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
         return None;
     }
 
-    let function = core_path(["mem", "discriminant"]);
+    let function = path::core(["mem", "discriminant"]);
 
     let discriminant = call_function(function, single(self_expression()));
 
@@ -71,7 +72,7 @@ fn hash_field(field: NamedField) -> Stmt {
 }
 
 fn hash_expression(expression: Expr) -> Stmt {
-    let function = core_path(["hash", "Hash", "hash"]);
+    let function = path::core(["hash", "Hash", "hash"]);
 
     let expression = call_function(function, dual(expression, state()));
 
@@ -89,7 +90,7 @@ fn generics() -> Generics {
                 paren_token: None,
                 modifier: TraitBoundModifier::None,
                 lifetimes: None,
-                path: core_path(["hash", "Hasher"]),
+                path: path::core(["hash", "Hasher"]),
             })),
             eq_token: None,
             default: None,

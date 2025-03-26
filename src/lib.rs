@@ -4,6 +4,7 @@ mod algebraic;
 mod attribute;
 mod field;
 mod parameterised;
+mod path;
 mod r#trait;
 mod util;
 mod variant;

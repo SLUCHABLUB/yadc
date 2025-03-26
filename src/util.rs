@@ -4,8 +4,7 @@ use syn::punctuated::Punctuated;
 use syn::{
     AttrStyle, Attribute, Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg,
     GenericArgument, GenericParam, Generics, ImplItemFn, Meta, Pat, PatIdent, PatType, Path,
-    PathSegment, ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple,
-    Visibility,
+    ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple, Visibility,
 };
 
 macro_rules! token {
@@ -16,6 +15,7 @@ macro_rules! token {
 }
 
 // TODO: remove
+use crate::path;
 pub(crate) use token;
 
 pub fn new_identifier(string: &str) -> Ident {
@@ -108,16 +108,6 @@ pub fn single<T, P: Default>(item: T) -> Punctuated<T, P> {
     once(item).collect()
 }
 
-pub fn new_path<const N: usize>(segments: [&str; N]) -> Path {
-    Path {
-        leading_colon: None,
-        segments: segments
-            .into_iter()
-            .map(|name| PathSegment::from(Ident::new(name, Span::call_site())))
-            .collect(),
-    }
-}
-
 /// Extract the name from a generic parameter (converts it to an argument).
 ///
 /// | parameter kind | input example | output |
@@ -145,11 +135,7 @@ pub fn unit_type() -> Type {
 }
 
 pub fn self_expression() -> Expr {
-    Expr::Path(ExprPath {
-        attrs: Vec::new(),
-        qself: None,
-        path: new_path(["self"]),
-    })
+    path::expression(path::new(["self"]))
 }
 
 pub fn variable_pattern(name: Ident) -> Pat {
@@ -183,14 +169,6 @@ pub fn mutable_reference(referend: Type) -> Type {
     })
 }
 
-pub fn expression_path(path: Path) -> Expr {
-    Expr::Path(ExprPath {
-        attrs: Vec::new(),
-        qself: None,
-        path,
-    })
-}
-
 pub fn path_attribute(path: Path) -> Attribute {
     Attribute {
         pound_token: token![#],
@@ -200,24 +178,10 @@ pub fn path_attribute(path: Path) -> Attribute {
     }
 }
 
-pub fn core_path<const N: usize>(segments: [&str; N]) -> Path {
-    let string = segments;
-    let mut segments = single(PathSegment::from(new_identifier("core")));
-
-    for string in string {
-        segments.push(PathSegment::from(new_identifier(string)));
-    }
-
-    Path {
-        leading_colon: Some(token![::]),
-        segments,
-    }
-}
-
 pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
     Expr::Call(ExprCall {
         attrs: Vec::new(),
-        func: Box::new(expression_path(function)),
+        func: Box::new(path::expression(function)),
         paren_token: token![()],
         args: arguments,
     })

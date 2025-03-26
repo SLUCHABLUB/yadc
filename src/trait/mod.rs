@@ -5,13 +5,14 @@ mod list;
 pub use list::List;
 
 use crate::parameterised::Parameterised;
-use crate::util::{core_path, new_path, path_attribute, token};
+use crate::path;
+use crate::util::{path_attribute, token};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
 
 fn automatically_derived() -> Attribute {
-    path_attribute(new_path(["automatically_derived"]))
+    path_attribute(path::new(["automatically_derived"]))
 }
 
 pub enum Trait {
@@ -49,8 +50,8 @@ impl Trait {
 
     pub fn path(&self) -> Path {
         match self {
-            Trait::Debug => core_path(["fmt", "Debug"]),
-            Trait::Hash => core_path(["hash", "Hash"]),
+            Trait::Debug => path::core(["fmt", "Debug"]),
+            Trait::Hash => path::core(["hash", "Hash"]),
         }
     }
 }
