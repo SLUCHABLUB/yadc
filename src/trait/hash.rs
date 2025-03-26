@@ -2,9 +2,10 @@ use crate::algebraic::AlgebraicItem;
 use crate::field::NamedField;
 use crate::parameterised::Parameterised;
 use crate::path;
+use crate::punctuated::punctuated;
 use crate::util::{
-    Receiver, call_function, dual, mutable_reference, new_identifier, new_impl_fn, reference,
-    self_expression, single, token, type_named, unit_type, variable_named,
+    Receiver, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
+    self_expression, token, type_named, unit_type, variable_named,
 };
 use crate::variant::Variant;
 use itertools::chain;
@@ -47,7 +48,7 @@ fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
 
     let function = path::core(["mem", "discriminant"]);
 
-    let discriminant = call_function(function, single(self_expression()));
+    let discriminant = call_function(function, punctuated![self_expression()]);
 
     Some(hash_expression(reference(discriminant)))
 }
@@ -74,7 +75,7 @@ fn hash_field(field: NamedField) -> Stmt {
 fn hash_expression(expression: Expr) -> Stmt {
     let function = path::core(["hash", "Hash", "hash"]);
 
-    let expression = call_function(function, dual(expression, state()));
+    let expression = call_function(function, punctuated![expression, state()]);
 
     Stmt::Expr(expression, Some(token![;]))
 }
@@ -82,16 +83,16 @@ fn hash_expression(expression: Expr) -> Stmt {
 fn generics() -> Generics {
     Generics {
         lt_token: Some(token![<]),
-        params: single(GenericParam::Type(TypeParam {
+        params: punctuated!(GenericParam::Type(TypeParam {
             attrs: Vec::new(),
             ident: new_identifier("H"),
             colon_token: Some(token![:]),
-            bounds: single(TypeParamBound::Trait(TraitBound {
+            bounds: punctuated![TypeParamBound::Trait(TraitBound {
                 paren_token: None,
                 modifier: TraitBoundModifier::None,
                 lifetimes: None,
                 path: path::core(["hash", "Hasher"]),
-            })),
+            })],
             eq_token: None,
             default: None,
         })),

@@ -1,4 +1,5 @@
-use crate::util::{new_identifier, single, token};
+use crate::punctuated::punctuated;
+use crate::util::{new_identifier, token};
 use proc_macro2::{Ident, Span};
 use syn::{Expr, ExprPath, Path, PathSegment};
 
@@ -14,7 +15,7 @@ pub fn new<const N: usize>(segments: [&str; N]) -> Path {
 
 pub fn core<const N: usize>(segments: [&str; N]) -> Path {
     let string = segments;
-    let mut segments = single(PathSegment::from(new_identifier("core")));
+    let mut segments = punctuated![PathSegment::from(new_identifier("core"))];
 
     for string in string {
         segments.push(PathSegment::from(new_identifier(string)));

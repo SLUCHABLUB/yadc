@@ -1,9 +1,9 @@
 use crate::field::Fields;
 use crate::parameterised::Parameterised;
 use crate::path;
+use crate::punctuated::punctuated;
 use crate::util::{
-    Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, single, token,
-    variable_named,
+    Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, token, variable_named,
 };
 use crate::variant::Variant;
 use quote::{ToTokens, quote};
@@ -95,7 +95,7 @@ fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
         Fields::Unit => return once(core_write_f(name_string)),
     };
 
-    expression = call_method(expression, debugger, single(name_string));
+    expression = call_method(expression, debugger, punctuated![name_string]);
 
     for field in variant.fields.clone().into_named() {
         #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
@@ -104,9 +104,9 @@ fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
         }
 
         let mut args = if matches!(variant.fields, Fields::Named(_)) {
-            single(core_stringify(&field.name))
+            punctuated![core_stringify(&field.name)]
         } else {
-            Punctuated::new()
+            punctuated![]
         };
 
         args.push(variable_named(field.name));

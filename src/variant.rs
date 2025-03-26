@@ -1,5 +1,6 @@
 use crate::attribute::Attribute;
 use crate::field::Fields;
+use crate::punctuated::punctuated;
 use crate::util::{self_expression, token};
 use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
@@ -39,12 +40,10 @@ impl Variant {
         let path = if let Some(prefix) = prefix {
             Path {
                 leading_colon: None,
-                segments: [
+                segments: punctuated![
                     PathSegment::from(prefix),
                     PathSegment::from(self.name.clone()),
-                ]
-                .into_iter()
-                .collect(),
+                ],
             }
         } else {
             Path::from(self.name.clone())

@@ -1,5 +1,6 @@
 use crate::algebraic::AlgebraicItem;
-use crate::util::{single, to_argument, token, type_named};
+use crate::punctuated::punctuated;
+use crate::util::{to_argument, token, type_named};
 use crate::variant::Variant;
 use itertools::Itertools;
 use proc_macro2::Ident;
@@ -41,7 +42,7 @@ impl Parameterised {
                     lifetimes: None,
                     bounded_ty: type_named(ty),
                     colon_token: token![:],
-                    bounds: single(bound.clone()),
+                    bounds: punctuated![bound.clone()],
                 })
             })
             .collect()
@@ -85,10 +86,10 @@ impl Parameterised {
             qself: None,
             path: Path {
                 leading_colon: None,
-                segments: single(PathSegment {
+                segments: punctuated![PathSegment {
                     ident: self.item.name().clone(),
                     arguments,
-                }),
+                }],
             },
         })
     }

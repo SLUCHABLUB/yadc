@@ -1,5 +1,4 @@
 use proc_macro2::{Ident, Span, TokenStream};
-use std::iter::once;
 use syn::punctuated::Punctuated;
 use syn::{
     AttrStyle, Attribute, Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg,
@@ -100,10 +99,6 @@ pub fn variable_named(name: Ident) -> Expr {
     path::expression(Path::from(name))
 }
 
-pub fn single<T, P: Default>(item: T) -> Punctuated<T, P> {
-    once(item).collect()
-}
-
 /// Extract the name from a generic parameter (converts it to an argument).
 ///
 /// | parameter kind | input example | output |
@@ -181,14 +176,6 @@ pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> 
         paren_token: token![()],
         args: arguments,
     })
-}
-
-// TODO: make a macro
-pub fn dual<T, P: Default>(first: T, second: T) -> Punctuated<T, P> {
-    let mut punctuated = Punctuated::new();
-    punctuated.push(first);
-    punctuated.push(second);
-    punctuated
 }
 
 pub fn reference(referend: Expr) -> Expr {
