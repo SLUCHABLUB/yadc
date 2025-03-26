@@ -97,11 +97,7 @@ pub fn type_named(name: Ident) -> Type {
 }
 
 pub fn variable_named(name: Ident) -> Expr {
-    Expr::Path(ExprPath {
-        attrs: Vec::new(),
-        qself: None,
-        path: Path::from(name),
-    })
+    path::expression(Path::from(name))
 }
 
 pub fn single<T, P: Default>(item: T) -> Punctuated<T, P> {
