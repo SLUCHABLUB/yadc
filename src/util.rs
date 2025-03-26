@@ -2,9 +2,10 @@ use proc_macro2::{Ident, Span, TokenStream};
 use std::iter::once;
 use syn::punctuated::Punctuated;
 use syn::{
-    AttrStyle, Attribute, Block, Expr, ExprMethodCall, ExprPath, FnArg, GenericArgument,
-    GenericParam, Generics, ImplItemFn, Meta, Pat, PatIdent, PatType, Path, PathSegment,
-    ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple, Visibility,
+    AttrStyle, Attribute, Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg,
+    GenericArgument, GenericParam, Generics, ImplItemFn, Meta, Pat, PatIdent, PatType, Path,
+    PathSegment, ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple,
+    Visibility,
 };
 
 macro_rules! token {
@@ -14,6 +15,7 @@ macro_rules! token {
     [$token:tt] => { <syn::Token![$token]>::default() };
 }
 
+// TODO: remove
 pub(crate) use token;
 
 pub fn new_identifier(string: &str) -> Ident {
@@ -210,4 +212,30 @@ pub fn core_path<const N: usize>(segments: [&str; N]) -> Path {
         leading_colon: Some(token![::]),
         segments,
     }
+}
+
+pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
+    Expr::Call(ExprCall {
+        attrs: Vec::new(),
+        func: Box::new(expression_path(function)),
+        paren_token: token![()],
+        args: arguments,
+    })
+}
+
+// TODO: make a macro
+pub fn dual<T, P: Default>(first: T, second: T) -> Punctuated<T, P> {
+    let mut punctuated = Punctuated::new();
+    punctuated.push(first);
+    punctuated.push(second);
+    punctuated
+}
+
+pub fn reference(referend: Expr) -> Expr {
+    Expr::Reference(ExprReference {
+        attrs: Vec::new(),
+        and_token: token![&],
+        mutability: None,
+        expr: Box::new(referend),
+    })
 }

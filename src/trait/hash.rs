@@ -2,13 +2,14 @@ use crate::algebraic::AlgebraicItem;
 use crate::field::NamedField;
 use crate::parameterised::Parameterised;
 use crate::util::{
-    Receiver, call_method, core_path, expression_path, mutable_reference, new_identifier,
-    new_impl_fn, self_expression, single, token, type_named, unit_type, variable_named,
+    Receiver, call_function, core_path, dual, mutable_reference, new_identifier, new_impl_fn,
+    reference, self_expression, single, token, type_named, unit_type, variable_named,
 };
 use crate::variant::Variant;
 use itertools::chain;
+use proc_macro2::Ident;
 use syn::{
-    Expr, ExprCall, GenericParam, Generics, ImplItemFn, Stmt, TraitBound, TraitBoundModifier, Type,
+    Expr, GenericParam, Generics, ImplItemFn, Stmt, TraitBound, TraitBoundModifier, Type,
     TypeParam, TypeParamBound,
 };
 
@@ -16,12 +17,20 @@ pub fn state_type() -> Type {
     mutable_reference(type_named(new_identifier("H")))
 }
 
+pub fn state_identifier() -> Ident {
+    new_identifier("state")
+}
+
+pub fn state() -> Expr {
+    variable_named(state_identifier())
+}
+
 pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
     new_impl_fn(
         new_identifier("hash"),
         generics(),
         Receiver::Reference,
-        [(new_identifier("state"), state_type())],
+        [(state_identifier(), state_type())],
         unit_type(),
         chain(
             maybe_hash_discriminant(&parameterised.item),
@@ -35,23 +44,11 @@ fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
         return None;
     }
 
-    let function = expression_path(core_path(["mem", "discriminant"]));
+    let function = core_path(["mem", "discriminant"]);
 
-    let discriminant = Expr::Call(ExprCall {
-        attrs: Vec::new(),
-        func: Box::new(function),
-        paren_token: token![()],
-        args: single(self_expression()),
-    });
+    let discriminant = call_function(function, single(self_expression()));
 
-    // TODO: don't call method
-    let expression = call_method(
-        discriminant,
-        new_identifier("hash"),
-        single(variable_named(new_identifier("state"))),
-    );
-
-    Some(Stmt::Expr(expression, Some(token![;])))
+    Some(hash_expression(reference(discriminant)))
 }
 
 fn hash_variant(variant: &Variant) -> Vec<Stmt> {
@@ -70,12 +67,13 @@ fn hash_variant(variant: &Variant) -> Vec<Stmt> {
 }
 
 fn hash_field(field: NamedField) -> Stmt {
-    // TODO: don't call method
-    let expression = call_method(
-        variable_named(field.name),
-        new_identifier("hash"),
-        single(variable_named(new_identifier("state"))),
-    );
+    hash_expression(variable_named(field.name))
+}
+
+fn hash_expression(expression: Expr) -> Stmt {
+    let function = core_path(["hash", "Hash", "hash"]);
+
+    let expression = call_function(function, dual(expression, state()));
 
     Stmt::Expr(expression, Some(token![;]))
 }
