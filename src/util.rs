@@ -197,3 +197,17 @@ pub fn path_attribute(path: Path) -> Attribute {
         meta: Meta::Path(path),
     }
 }
+
+pub fn core_path<const N: usize>(segments: [&str; N]) -> Path {
+    let string = segments;
+    let mut segments = single(PathSegment::from(new_identifier("core")));
+
+    for string in string {
+        segments.push(PathSegment::from(new_identifier(string)));
+    }
+
+    Path {
+        leading_colon: Some(token![::]),
+        segments,
+    }
+}

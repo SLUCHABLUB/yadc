@@ -5,7 +5,7 @@ mod list;
 pub use list::List;
 
 use crate::parameterised::Parameterised;
-use crate::util::{new_path, path_attribute, token};
+use crate::util::{core_path, new_path, path_attribute, token};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
@@ -49,8 +49,8 @@ impl Trait {
 
     pub fn path(&self) -> Path {
         match self {
-            Trait::Debug => new_path(["core", "fmt", "Debug"]),
-            Trait::Hash => new_path(["core", "hash", "Hash"]),
+            Trait::Debug => core_path(["fmt", "Debug"]),
+            Trait::Hash => core_path(["hash", "Hash"]),
         }
     }
 }

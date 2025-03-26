@@ -1,8 +1,8 @@
 use crate::field::Fields;
 use crate::parameterised::Parameterised;
 use crate::util::{
-    Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, new_path, single, token,
-    variable_named,
+    Receiver, call_method, core_path, mutable_reference, new_identifier, new_impl_fn, single,
+    token, variable_named,
 };
 use crate::variant::Variant;
 use quote::{ToTokens, quote};
@@ -13,13 +13,13 @@ use syn::{Expr, ExprMacro, Generics, ImplItemFn, Macro, MacroDelimiter, Stmt, Ty
 fn core_fmt_result() -> Type {
     Type::Path(TypePath {
         qself: None,
-        path: new_path(["core", "fmt", "Result"]),
+        path: core_path(["fmt", "Result"]),
     })
 }
 
 fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
     let mac = Macro {
-        path: new_path(["core", "write"]),
+        path: core_path(["write"]),
         bang_token: token![!],
         delimiter: MacroDelimiter::Paren(token![()]),
         tokens: quote!(f, #arguments),
@@ -36,7 +36,7 @@ fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
 
 fn core_stringify<T: ToTokens>(value: T) -> Expr {
     let mac = Macro {
-        path: new_path(["core", "stringify"]),
+        path: core_path(["stringify"]),
         bang_token: token![!],
         delimiter: MacroDelimiter::Paren(token![()]),
         tokens: value.to_token_stream(),
@@ -51,7 +51,7 @@ fn core_stringify<T: ToTokens>(value: T) -> Expr {
 fn formatter_type() -> Type {
     mutable_reference(Type::Path(TypePath {
         qself: None,
-        path: new_path(["core", "fmt", "Formatter"]),
+        path: core_path(["fmt", "Formatter"]),
     }))
 }
 
