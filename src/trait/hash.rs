@@ -81,21 +81,25 @@ fn hash_expression(expression: Expr) -> Stmt {
 }
 
 fn generics() -> Generics {
+    let bound = TypeParamBound::Trait(TraitBound {
+        paren_token: None,
+        modifier: TraitBoundModifier::None,
+        lifetimes: None,
+        path: path::core(["hash", "Hasher"]),
+    });
+
+    let parameter = GenericParam::Type(TypeParam {
+        attrs: Vec::new(),
+        ident: new_identifier("H"),
+        colon_token: Some(token![:]),
+        bounds: punctuated![bound],
+        eq_token: None,
+        default: None,
+    });
+
     Generics {
         lt_token: Some(token![<]),
-        params: punctuated!(GenericParam::Type(TypeParam {
-            attrs: Vec::new(),
-            ident: new_identifier("H"),
-            colon_token: Some(token![:]),
-            bounds: punctuated![TypeParamBound::Trait(TraitBound {
-                paren_token: None,
-                modifier: TraitBoundModifier::None,
-                lifetimes: None,
-                path: path::core(["hash", "Hasher"]),
-            })],
-            eq_token: None,
-            default: None,
-        })),
+        params: punctuated![parameter],
         gt_token: Some(token![>]),
         where_clause: None,
     }
