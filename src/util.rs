@@ -27,7 +27,7 @@ pub enum Receiver {
     Reference,
 }
 
-/// Constructs a [`ItemFn`]
+/// Constructs an [`ImplItemFn`]
 pub fn new_impl_fn<const PARAMETERS: usize, Statements>(
     name: Ident,
     generics: Generics,
