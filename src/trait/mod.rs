@@ -1,12 +1,14 @@
 mod debug;
 mod hash;
+mod list;
+
+pub use list::List;
 
 use crate::parameterised::Parameterised;
 use crate::util::{new_path, path_attribute, token};
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::{IntoIter, Punctuated};
 use syn::spanned::Spanned;
-use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result, Token};
+use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
 
 fn automatically_derived() -> Attribute {
     path_attribute(new_path(["automatically_derived"]))
@@ -74,22 +76,5 @@ impl TryFrom<PathSegment> for Trait {
 impl Parse for Trait {
     fn parse(input: ParseStream) -> Result<Self> {
         Trait::try_from(PathSegment::parse(input)?)
-    }
-}
-
-pub struct List(Punctuated<Trait, Token![,]>);
-
-impl Parse for List {
-    fn parse(input: ParseStream) -> Result<Self> {
-        input.parse_terminated(Trait::parse, Token![,]).map(List)
-    }
-}
-
-impl IntoIterator for List {
-    type Item = Trait;
-    type IntoIter = IntoIter<Trait>;
-
-    fn into_iter(self) -> IntoIter<Trait> {
-        self.0.into_iter()
     }
 }
