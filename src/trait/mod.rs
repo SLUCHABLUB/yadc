@@ -2,22 +2,14 @@ mod debug;
 mod hash;
 
 use crate::parameterised::Parameterised;
-use crate::util::{new_path, token};
+use crate::util::{new_path, path_attribute, token};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::{IntoIter, Punctuated};
 use syn::spanned::Spanned;
-use syn::{
-    AttrStyle, Attribute, Error, Generics, ItemImpl, Meta, Path, PathArguments, PathSegment,
-    Result, Token,
-};
+use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result, Token};
 
 fn automatically_derived() -> Attribute {
-    Attribute {
-        pound_token: token![#],
-        style: AttrStyle::Outer,
-        bracket_token: token![[]],
-        meta: Meta::Path(new_path(["automatically_derived"])),
-    }
+    path_attribute(new_path(["automatically_derived"]))
 }
 
 pub enum Trait {

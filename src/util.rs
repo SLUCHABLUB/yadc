@@ -2,9 +2,9 @@ use proc_macro2::{Ident, Span, TokenStream};
 use std::iter::once;
 use syn::punctuated::Punctuated;
 use syn::{
-    Block, Expr, ExprMethodCall, ExprPath, FnArg, GenericArgument, GenericParam, Generics,
-    ImplItemFn, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt, Token,
-    Type, TypePath, TypeReference, TypeTuple, Visibility,
+    AttrStyle, Attribute, Block, Expr, ExprMethodCall, ExprPath, FnArg, GenericArgument,
+    GenericParam, Generics, ImplItemFn, Meta, Pat, PatIdent, PatType, Path, PathSegment,
+    ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple, Visibility,
 };
 
 macro_rules! token {
@@ -187,4 +187,13 @@ pub fn expression_path(path: Path) -> Expr {
         qself: None,
         path,
     })
+}
+
+pub fn path_attribute(path: Path) -> Attribute {
+    Attribute {
+        pound_token: token![#],
+        style: AttrStyle::Outer,
+        bracket_token: token![[]],
+        meta: Meta::Path(path),
+    }
 }
