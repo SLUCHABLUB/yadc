@@ -1,18 +1,17 @@
-use crate::attribute::Attribute;
-use crate::field::named::NamedField;
+use crate::{FieldConfig, NamedField};
 use quote::format_ident;
-use syn::{Error, Field, Type};
+use syn::{Error, Field, Result, Type};
 
 #[derive(Clone)]
 pub struct UnnamedField {
-    pub attributes: Vec<Attribute>,
+    pub config: FieldConfig,
     pub ty: Type,
 }
 
 impl UnnamedField {
     pub fn into_named(self, index: usize) -> NamedField {
         NamedField {
-            attributes: self.attributes,
+            config: self.config,
             name: format_ident!("value_{index}"),
             ty: self.ty,
         }
@@ -22,9 +21,9 @@ impl UnnamedField {
 impl TryFrom<Field> for UnnamedField {
     type Error = Error;
 
-    fn try_from(field: Field) -> syn::Result<Self> {
+    fn try_from(field: Field) -> Result<Self> {
         Ok(UnnamedField {
-            attributes: Attribute::from_vec(field.attrs)?,
+            config: FieldConfig::try_from(field.attrs)?,
             ty: field.ty,
         })
     }

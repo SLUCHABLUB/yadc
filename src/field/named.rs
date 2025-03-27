@@ -1,11 +1,11 @@
-use crate::attribute::Attribute;
+use crate::FieldConfig;
 use proc_macro2::Ident;
 use syn::spanned::Spanned;
 use syn::{Error, Field, Type};
 
 #[derive(Clone)]
 pub struct NamedField {
-    pub attributes: Vec<Attribute>,
+    pub config: FieldConfig,
     pub name: Ident,
     #[expect(
         unused,
@@ -23,7 +23,7 @@ impl TryFrom<Field> for NamedField {
         let error = Error::new(field.span(), EXPECTED_FIELD_NAME);
 
         Ok(NamedField {
-            attributes: Attribute::from_vec(field.attrs)?,
+            config: FieldConfig::try_from(field.attrs)?,
             name: field.ident.ok_or(error)?,
             ty: field.ty,
         })

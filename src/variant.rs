@@ -1,7 +1,5 @@
-use crate::attribute::Attribute;
-use crate::field::Fields;
-use crate::punctuated::punctuated;
 use crate::util::{self_expression, token};
+use crate::{Fields, VariantConfig, punctuated};
 use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
 use syn::{
@@ -11,7 +9,7 @@ use syn::{
 
 /// A `struct` or an `enum` variant.
 pub struct Variant {
-    pub attributes: Vec<Attribute>,
+    pub config: VariantConfig,
     pub name: Ident,
     pub fields: Fields,
 }
@@ -97,7 +95,7 @@ impl TryFrom<ItemStruct> for Variant {
 
     fn try_from(item: ItemStruct) -> Result<Self> {
         Ok(Variant {
-            attributes: Attribute::from_vec(item.attrs)?,
+            config: VariantConfig::try_from(item.attrs)?,
             name: item.ident,
             fields: Fields::try_from(item.fields)?,
         })
@@ -109,7 +107,7 @@ impl TryFrom<syn::Variant> for Variant {
 
     fn try_from(variant: syn::Variant) -> Result<Self> {
         Ok(Variant {
-            attributes: Attribute::from_vec(variant.attrs)?,
+            config: VariantConfig::try_from(variant.attrs)?,
             name: variant.ident,
             fields: Fields::try_from(variant.fields)?,
         })

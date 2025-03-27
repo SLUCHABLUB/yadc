@@ -1,4 +1,4 @@
-use crate::r#trait::Trait;
+use crate::Trait;
 use syn::Token;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::{IntoIter, Punctuated};

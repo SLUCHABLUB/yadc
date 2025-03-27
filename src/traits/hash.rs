@@ -1,13 +1,8 @@
-use crate::algebraic::AlgebraicItem;
-use crate::field::NamedField;
-use crate::parameterised::Parameterised;
-use crate::path;
-use crate::punctuated::punctuated;
 use crate::util::{
     Receiver, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
     self_expression, token, type_named, unit_type, variable_named,
 };
-use crate::variant::Variant;
+use crate::{AlgebraicItem, NamedField, Parameterised, Variant, VariantConfig, path, punctuated};
 use itertools::chain;
 use proc_macro2::Ident;
 use syn::{
@@ -42,7 +37,7 @@ pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
 }
 
 fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
-    if matches!(item, AlgebraicItem::Struct(_)) {
+    if matches!(item, AlgebraicItem::Struct { .. }) {
         return None;
     }
 
@@ -54,10 +49,7 @@ fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
 }
 
 fn hash_variant(variant: &Variant) -> Vec<Stmt> {
-    #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
-    for attribute in &variant.attributes {
-        match *attribute {}
-    }
+    let VariantConfig {} = variant.config;
 
     variant
         .fields

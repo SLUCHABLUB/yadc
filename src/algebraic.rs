@@ -1,32 +1,32 @@
-use crate::attribute::Attribute;
 use crate::util::{self_expression, token};
-use crate::variant::Variant;
+use crate::{TypeConfig, Variant};
 use proc_macro2::Ident;
 use syn::{Arm, Block, Error, Expr, ExprBlock, ExprMatch, ItemEnum, Result, Stmt};
 
 pub enum AlgebraicItem {
     Enum {
-        attributes: Vec<Attribute>,
+        config: TypeConfig,
         name: Ident,
         variants: Vec<Variant>,
     },
-    Struct(Variant),
+    Struct {
+        config: TypeConfig,
+        variant: Variant,
+    },
 }
 
 impl AlgebraicItem {
     pub fn name(&self) -> &Ident {
         match self {
             AlgebraicItem::Enum { name, .. } => name,
-            AlgebraicItem::Struct(variant) => &variant.name,
+            AlgebraicItem::Struct { variant, .. } => &variant.name,
         }
     }
 
     /// The attributes that are applied to the type
-    pub fn attributes(&self) -> &[Attribute] {
-        match self {
-            AlgebraicItem::Enum { attributes, .. } => attributes,
-            AlgebraicItem::Struct(variant) => &variant.attributes,
-        }
+    pub fn config(&self) -> &TypeConfig {
+        let (AlgebraicItem::Enum { config, .. } | AlgebraicItem::Struct { config, .. }) = self;
+        config
     }
 
     pub fn map_variants<F, Statements>(&self, mut function: F) -> Vec<Stmt>
@@ -36,7 +36,7 @@ impl AlgebraicItem {
     {
         match self {
             AlgebraicItem::Enum {
-                attributes: _,
+                config: _,
                 name,
                 variants,
             } => {
@@ -68,7 +68,7 @@ impl AlgebraicItem {
                     None,
                 )]
             }
-            AlgebraicItem::Struct(variant) => {
+            AlgebraicItem::Struct { variant, .. } => {
                 let destruct = variant.destruct_self();
 
                 let mut statements = vec![destruct];
@@ -84,7 +84,7 @@ impl TryFrom<ItemEnum> for AlgebraicItem {
 
     fn try_from(item: ItemEnum) -> Result<Self> {
         Ok(AlgebraicItem::Enum {
-            attributes: Attribute::from_vec(item.attrs)?,
+            config: TypeConfig::try_from(item.attrs)?,
             name: item.ident,
             variants: Variant::from_list(item.variants)?,
         })

@@ -1,7 +1,5 @@
-use crate::algebraic::AlgebraicItem;
-use crate::punctuated::punctuated;
 use crate::util::{to_argument, token, type_named};
-use crate::variant::Variant;
+use crate::{AlgebraicItem, TypeConfig, Variant, punctuated};
 use itertools::Itertools;
 use proc_macro2::Ident;
 use std::mem::take;
@@ -143,9 +141,11 @@ impl TryFrom<Item> for Parameterised {
             }
             Item::Struct(mut item) => {
                 let (parameters, where_stem) = extract(&mut item.generics);
-                let item = Variant::try_from(item).map(AlgebraicItem::Struct)?;
+                let config = TypeConfig::try_from(item.attrs.clone())?;
+                let variant = Variant::try_from(item)?;
+
                 Ok(Parameterised {
-                    item,
+                    item: AlgebraicItem::Struct { config, variant },
                     parameters,
                     where_stem,
                 })

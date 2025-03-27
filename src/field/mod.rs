@@ -2,8 +2,8 @@ mod named;
 mod unnamed;
 
 pub use named::NamedField;
+pub use unnamed::UnnamedField;
 
-use crate::field::unnamed::UnnamedField;
 use itertools::Itertools;
 use proc_macro2::Ident;
 use quote::format_ident;

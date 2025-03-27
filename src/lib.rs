@@ -1,19 +1,25 @@
 #![deny(clippy::pedantic)]
 
+extern crate proc_macro;
+
 mod algebraic;
-mod attribute;
+mod config;
 mod field;
 mod parameterised;
 mod path;
 mod punctuated;
-mod r#trait;
+mod traits;
 mod util;
 mod variant;
 
-extern crate proc_macro;
+pub(crate) use algebraic::AlgebraicItem;
+pub(crate) use config::{FieldConfig, TypeConfig, VariantConfig};
+pub(crate) use field::{Fields, NamedField};
+pub(crate) use parameterised::Parameterised;
+pub(crate) use punctuated::punctuated;
+pub(crate) use traits::{List, Trait};
+pub(crate) use variant::Variant;
 
-use crate::parameterised::Parameterised;
-use crate::r#trait::List;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote_spanned};
 use syn::spanned::Spanned;

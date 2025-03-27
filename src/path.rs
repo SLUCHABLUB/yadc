@@ -1,4 +1,4 @@
-use crate::punctuated::punctuated;
+use crate::punctuated;
 use crate::util::{new_identifier, token};
 use proc_macro2::{Ident, Span};
 use syn::{Expr, ExprPath, Path, PathSegment};

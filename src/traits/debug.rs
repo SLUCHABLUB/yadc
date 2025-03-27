@@ -1,11 +1,9 @@
-use crate::field::Fields;
-use crate::parameterised::Parameterised;
-use crate::path;
-use crate::punctuated::punctuated;
 use crate::util::{
     Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, token, variable_named,
 };
-use crate::variant::Variant;
+use crate::{
+    FieldConfig, Fields, Parameterised, TypeConfig, Variant, VariantConfig, path, punctuated,
+};
 use quote::{ToTokens, quote};
 use std::iter::{Once, once};
 use syn::punctuated::Punctuated;
@@ -57,10 +55,7 @@ fn formatter_type() -> Type {
 }
 
 pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
-    #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
-    for attribute in parameterised.item.attributes() {
-        match *attribute {}
-    }
+    let TypeConfig {} = parameterised.item.config();
 
     // TODO: read from attributes
     let non_exhaustive = false;
@@ -82,10 +77,7 @@ pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
 fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
     let name_string = core_stringify(&variant.name);
 
-    #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
-    for attribute in &variant.attributes {
-        match *attribute {}
-    }
+    let VariantConfig {} = variant.config;
 
     let mut expression = variable_named(new_identifier("f"));
 
@@ -98,10 +90,7 @@ fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
     expression = call_method(expression, debugger, punctuated![name_string]);
 
     for field in variant.fields.clone().into_named() {
-        #[expect(clippy::never_loop, reason = "Attribute is temporarily empty")]
-        for attribute in &field.attributes {
-            match *attribute {}
-        }
+        let FieldConfig {} = field.config;
 
         let mut args = if matches!(variant.fields, Fields::Named(_)) {
             punctuated![core_stringify(&field.name)]

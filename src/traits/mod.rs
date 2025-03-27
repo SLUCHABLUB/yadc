@@ -4,17 +4,17 @@ mod list;
 
 pub use list::List;
 
-use crate::parameterised::Parameterised;
-use crate::path;
 use crate::util::{path_attribute, token};
+use crate::{Parameterised, path};
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::{Attribute, Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
+use syn::{Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
 
-fn automatically_derived() -> Attribute {
+fn automatically_derived() -> syn::Attribute {
     path_attribute(path::new(["automatically_derived"]))
 }
 
+#[derive(Clone, Eq, PartialEq)]
 pub enum Trait {
     Debug,
     Hash,
