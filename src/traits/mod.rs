@@ -5,18 +5,15 @@ mod list;
 pub use list::List;
 
 use crate::item::Algebraic;
-use crate::util::{path_attribute, token};
+use crate::util::token;
 use crate::{Parameterised, path};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
     Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result, Token, WherePredicate,
+    parse_quote,
 };
-
-fn automatically_derived() -> syn::Attribute {
-    path_attribute(path::new(["automatically_derived"]))
-}
 
 #[derive(Clone, Eq, PartialEq)]
 pub enum Trait {
@@ -35,7 +32,7 @@ impl Trait {
         let where_clause = parameterised.where_clause_with_bounds(bounds);
 
         ItemImpl {
-            attrs: vec![automatically_derived()],
+            attrs: vec![parse_quote!(#[automatically_derived])],
             defaultness: None,
             unsafety: None,
             impl_token: token![impl],
