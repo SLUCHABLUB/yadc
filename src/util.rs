@@ -2,10 +2,10 @@ use crate::{expression, pattern};
 use proc_macro2::{Ident, Span, TokenStream};
 use syn::punctuated::Punctuated;
 use syn::{
-    AttrStyle, Attribute, Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg,
-    GenericArgument, GenericParam, Generics, ImplItemFn, Meta, PatType, Path, PredicateType,
-    ReturnType, Signature, Stmt, Token, TraitBound, TraitBoundModifier, Type, TypeParamBound,
-    TypePath, TypeReference, TypeTuple, Visibility, WherePredicate,
+    Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg, GenericArgument,
+    GenericParam, Generics, ImplItemFn, PatType, Path, PredicateType, ReturnType, Signature, Stmt,
+    Token, TraitBound, TraitBoundModifier, Type, TypeParamBound, TypePath, TypeReference,
+    TypeTuple, Visibility, WherePredicate,
 };
 
 macro_rules! token {
@@ -156,15 +156,6 @@ pub fn mutable_reference(referend: Type) -> Type {
         mutability: Some(token![mut]),
         elem: Box::new(referend),
     })
-}
-
-pub fn path_attribute(path: Path) -> Attribute {
-    Attribute {
-        pound_token: token![#],
-        style: AttrStyle::Outer,
-        bracket_token: token![[]],
-        meta: Meta::Path(path),
-    }
 }
 
 pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
