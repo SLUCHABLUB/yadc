@@ -2,27 +2,32 @@
 
 extern crate proc_macro;
 
-mod algebraic;
 mod config;
+mod error;
+mod expression;
 mod field;
+mod item;
+mod metas;
 mod parameterised;
 mod path;
+mod pattern;
 mod punctuated;
+mod statement;
 mod traits;
 mod util;
 mod variant;
 
-pub(crate) use algebraic::AlgebraicItem;
-pub(crate) use config::{FieldConfig, TypeConfig, VariantConfig};
+pub(crate) use config::define_config;
 pub(crate) use field::{Fields, NamedField};
+pub(crate) use item::Algebraic;
 pub(crate) use parameterised::Parameterised;
 pub(crate) use punctuated::punctuated;
 pub(crate) use traits::{List, Trait};
 pub(crate) use variant::Variant;
 
+use crate::item::remove_attributes;
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote_spanned};
-use syn::spanned::Spanned;
+use quote::ToTokens;
 use syn::{Item, Result, parse2};
 
 #[proc_macro_attribute]
@@ -39,18 +44,20 @@ pub fn implement(
 }
 
 fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    let item_span = item.span();
-
     let traits = parse2::<List>(attribute)?;
     let item = parse2::<Item>(item)?;
 
+    let mut output_item = item.clone();
+
+    remove_attributes(&mut output_item);
+
     // TODO: remove helper attributes
-    let mut output = quote_spanned! { item_span => #item };
+    let mut output = output_item.into_token_stream();
 
     let parameterised = Parameterised::try_from(item)?;
 
     for r#trait in traits {
-        output.extend(r#trait.implement(&parameterised).to_token_stream());
+        output.extend(r#trait.implement(&parameterised).into_token_stream());
     }
 
     Ok(output)

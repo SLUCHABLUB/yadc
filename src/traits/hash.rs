@@ -1,28 +1,35 @@
+use crate::expression::{self_, variable};
+use crate::traits::Trait;
 use crate::util::{
-    Receiver, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
-    self_expression, token, type_named, unit_type, variable_named,
+    Receiver, bound_type, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
+    token, type_named, unit_type,
 };
-use crate::{AlgebraicItem, NamedField, Parameterised, Variant, VariantConfig, path, punctuated};
+use crate::{
+    Algebraic, NamedField, Parameterised, Variant, field, item, path, punctuated, variant,
+};
 use itertools::chain;
 use proc_macro2::Ident;
+use syn::punctuated::Punctuated;
 use syn::{
-    Expr, GenericParam, Generics, ImplItemFn, Stmt, TraitBound, TraitBoundModifier, Type,
-    TypeParam, TypeParamBound,
+    Expr, GenericParam, Generics, ImplItemFn, Stmt, Token, TraitBound, TraitBoundModifier, Type,
+    TypeParam, TypeParamBound, WherePredicate,
 };
 
-pub fn state_type() -> Type {
+fn state_type() -> Type {
     mutable_reference(type_named(new_identifier("H")))
 }
 
-pub fn state_identifier() -> Ident {
+fn state_identifier() -> Ident {
     new_identifier("state")
 }
 
-pub fn state() -> Expr {
-    variable_named(state_identifier())
+fn state_expression() -> Expr {
+    variable(state_identifier())
 }
 
 pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
+    let item::hash::Config {} = parameterised.item.config().hash;
+
     new_impl_fn(
         new_identifier("hash"),
         generics(),
@@ -36,20 +43,22 @@ pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
     )
 }
 
-fn maybe_hash_discriminant(item: &AlgebraicItem) -> Option<Stmt> {
-    if matches!(item, AlgebraicItem::Struct { .. }) {
+fn maybe_hash_discriminant(item: &Algebraic) -> Option<Stmt> {
+    let item::hash::Config {} = item.config().hash;
+
+    if matches!(item, Algebraic::Struct { .. }) {
         return None;
     }
 
     let function = path::core(["mem", "discriminant"]);
 
-    let discriminant = call_function(function, punctuated![self_expression()]);
+    let discriminant = call_function(function, punctuated![self_()]);
 
     Some(hash_expression(reference(discriminant)))
 }
 
 fn hash_variant(variant: &Variant) -> Vec<Stmt> {
-    let VariantConfig {} = variant.config;
+    let variant::hash::Config {} = variant.config.hash;
 
     variant
         .fields
@@ -61,17 +70,20 @@ fn hash_variant(variant: &Variant) -> Vec<Stmt> {
 }
 
 fn hash_field(field: NamedField) -> Stmt {
-    hash_expression(variable_named(field.name))
+    let field::hash::Config {} = field.config.hash;
+
+    hash_expression(variable(field.name))
 }
 
 fn hash_expression(expression: Expr) -> Stmt {
     let function = path::core(["hash", "Hash", "hash"]);
 
-    let expression = call_function(function, punctuated![expression, state()]);
+    let expression = call_function(function, punctuated![expression, state_expression()]);
 
     Stmt::Expr(expression, Some(token![;]))
 }
 
+/// The generics for the `Hash::hash` function.
 fn generics() -> Generics {
     let bound = TypeParamBound::Trait(TraitBound {
         paren_token: None,
@@ -95,4 +107,22 @@ fn generics() -> Generics {
         gt_token: Some(token![>]),
         where_clause: None,
     }
+}
+
+pub fn bounds(item: &Algebraic) -> Punctuated<WherePredicate, Token![,]> {
+    let item::hash::Config {} = item.config().hash;
+
+    let mut bounds = Punctuated::new();
+
+    for variant in item.variants() {
+        let variant::hash::Config {} = variant.config.hash;
+
+        for field in variant.fields.clone().into_named() {
+            let field::hash::Config {} = field.config.hash;
+
+            bounds.push(bound_type(field.ty, Trait::Hash.path()));
+        }
+    }
+
+    bounds
 }

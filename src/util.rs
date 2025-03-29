@@ -1,9 +1,11 @@
+use crate::{expression, pattern};
 use proc_macro2::{Ident, Span, TokenStream};
 use syn::punctuated::Punctuated;
 use syn::{
     AttrStyle, Attribute, Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg,
-    GenericArgument, GenericParam, Generics, ImplItemFn, Meta, Pat, PatIdent, PatType, Path,
-    ReturnType, Signature, Stmt, Token, Type, TypePath, TypeReference, TypeTuple, Visibility,
+    GenericArgument, GenericParam, Generics, ImplItemFn, Meta, PatType, Path, PredicateType,
+    ReturnType, Signature, Stmt, Token, TraitBound, TraitBoundModifier, Type, TypeParamBound,
+    TypePath, TypeReference, TypeTuple, Visibility, WherePredicate,
 };
 
 macro_rules! token {
@@ -14,7 +16,7 @@ macro_rules! token {
 }
 
 // TODO: remove
-use crate::path;
+use crate::punctuated::punctuated;
 pub(crate) use token;
 
 pub fn new_identifier(string: &str) -> Ident {
@@ -56,7 +58,7 @@ where
     for (parameter, ty) in parameters {
         inputs.push(FnArg::Typed(PatType {
             attrs: Vec::new(),
-            pat: Box::new(variable_pattern(parameter)),
+            pat: Box::new(pattern::variable(parameter)),
             colon_token: token![:],
             ty: Box::new(ty),
         }));
@@ -88,15 +90,25 @@ where
     }
 }
 
+pub fn bound_type(ty: Type, trait_bound: Path) -> WherePredicate {
+    WherePredicate::Type(PredicateType {
+        lifetimes: None,
+        bounded_ty: ty,
+        colon_token: token![:],
+        bounds: punctuated![TypeParamBound::Trait(TraitBound {
+            paren_token: None,
+            modifier: TraitBoundModifier::None,
+            lifetimes: None,
+            path: trait_bound,
+        })],
+    })
+}
+
 pub fn type_named(name: Ident) -> Type {
     Type::Path(TypePath {
         qself: None,
         path: Path::from(name),
     })
-}
-
-pub fn variable_named(name: Ident) -> Expr {
-    path::expression(Path::from(name))
 }
 
 /// Extract the name from a generic parameter (converts it to an argument).
@@ -122,20 +134,6 @@ pub fn unit_type() -> Type {
     Type::Tuple(TypeTuple {
         paren_token: token![()],
         elems: Punctuated::new(),
-    })
-}
-
-pub fn self_expression() -> Expr {
-    path::expression(path::new(["self"]))
-}
-
-pub fn variable_pattern(name: Ident) -> Pat {
-    Pat::Ident(PatIdent {
-        attrs: Vec::new(),
-        by_ref: None,
-        mutability: None,
-        ident: name,
-        subpat: None,
     })
 }
 
@@ -172,7 +170,7 @@ pub fn path_attribute(path: Path) -> Attribute {
 pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
     Expr::Call(ExprCall {
         attrs: Vec::new(),
-        func: Box::new(path::expression(function)),
+        func: Box::new(expression::path(function)),
         paren_token: token![()],
         args: arguments,
     })

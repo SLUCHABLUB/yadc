@@ -1,14 +1,22 @@
+use crate::expression::{if_else, variable};
+use crate::item::Algebraic;
+use crate::statement::{implicit_return, let_mut};
+use crate::traits::Trait;
 use crate::util::{
-    Receiver, call_method, mutable_reference, new_identifier, new_impl_fn, token, variable_named,
+    Receiver, bound_type, call_method, mutable_reference, new_identifier, new_impl_fn, token,
 };
 use crate::{
-    FieldConfig, Fields, Parameterised, TypeConfig, Variant, VariantConfig, path, punctuated,
+    Fields, NamedField, Parameterised, Variant, field, item, path, punctuated, statement, variant,
 };
+use proc_macro2::Ident;
 use quote::{ToTokens, quote};
-use std::iter::{Once, once};
 use syn::punctuated::Punctuated;
-use syn::{Expr, ExprMacro, Generics, ImplItemFn, Macro, MacroDelimiter, Stmt, Type, TypePath};
+use syn::{
+    Expr, ExprMacro, Generics, ImplItemFn, Macro, MacroDelimiter, Stmt, Token, Type, TypePath,
+    WherePredicate,
+};
 
+/// `core::fmt::Result`
 fn core_fmt_result() -> Type {
     Type::Path(TypePath {
         qself: None,
@@ -16,6 +24,7 @@ fn core_fmt_result() -> Type {
     })
 }
 
+/// `core::write!(f, ...)`
 fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
     let mac = Macro {
         path: path::core(["write"]),
@@ -24,27 +33,29 @@ fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
         tokens: quote!(f, #arguments),
     };
 
-    Stmt::Expr(
-        Expr::Macro(ExprMacro {
-            attrs: Vec::new(),
-            mac,
-        }),
-        None,
-    )
+    implicit_return(Expr::Macro(ExprMacro {
+        attrs: Vec::new(),
+        mac,
+    }))
 }
 
+/// `core::stringify!(...)`
 fn core_stringify<T: ToTokens>(value: T) -> Expr {
     let mac = Macro {
         path: path::core(["stringify"]),
         bang_token: token![!],
         delimiter: MacroDelimiter::Paren(token![()]),
-        tokens: value.to_token_stream(),
+        tokens: value.into_token_stream(),
     };
 
     Expr::Macro(ExprMacro {
         attrs: Vec::new(),
         mac,
     })
+}
+
+fn formatter_identifier() -> Ident {
+    new_identifier("f")
 }
 
 fn formatter_type() -> Type {
@@ -54,62 +65,102 @@ fn formatter_type() -> Type {
     }))
 }
 
+fn formatter_expression() -> Expr {
+    variable(formatter_identifier())
+}
+
 pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
-    let TypeConfig {} = parameterised.item.config();
+    let item::debug::Config {} = parameterised.item.config().debug;
 
-    // TODO: read from attributes
-    let non_exhaustive = false;
-
-    let statements = parameterised
-        .item
-        .map_variants(|variant| debug_variant(variant, non_exhaustive));
+    let statements = parameterised.item.map_variants(debug_variant);
 
     new_impl_fn(
         new_identifier("fmt"),
         Generics::default(),
         Receiver::Reference,
-        [(new_identifier("f"), formatter_type())],
+        [(formatter_identifier(), formatter_type())],
         core_fmt_result(),
         statements,
     )
 }
 
-fn debug_variant(variant: &Variant, non_exhaustive: bool) -> Once<Stmt> {
+fn debug_variant(variant: &Variant) -> Vec<Stmt> {
     let name_string = core_stringify(&variant.name);
 
-    let VariantConfig {} = variant.config;
-
-    let mut expression = variable_named(new_identifier("f"));
+    let variant::debug::Config { non_exhaustive } = &variant.config.debug;
 
     let debugger = match variant.fields {
         Fields::Named(_) => new_identifier("debug_struct"),
         Fields::Unnamed(_) => new_identifier("debug_tuple"),
-        Fields::Unit => return once(core_write_f(name_string)),
+        Fields::Unit => return vec![core_write_f(name_string)],
     };
+    let is_named = matches!(variant.fields, Fields::Named(_));
 
-    expression = call_method(expression, debugger, punctuated![name_string]);
+    let mut statements = Vec::new();
+
+    let builder = call_method(formatter_expression(), debugger, punctuated![name_string]);
+
+    // create the debug builder
+    statements.push(let_mut(formatter_identifier(), builder));
 
     for field in variant.fields.clone().into_named() {
-        let FieldConfig {} = field.config;
-
-        let mut args = if matches!(variant.fields, Fields::Named(_)) {
-            punctuated![core_stringify(&field.name)]
-        } else {
-            punctuated![]
-        };
-
-        args.push(variable_named(field.name));
-
-        expression = call_method(expression, new_identifier("field"), args);
+        statements.extend(debug_field(field, is_named));
     }
 
-    let finish = if non_exhaustive {
-        new_identifier("finish_non_exhaustive")
+    // finish the builder
+    statements.push(implicit_return(if_else(
+        non_exhaustive.clone(),
+        call_method(
+            formatter_expression(),
+            new_identifier("finish_non_exhaustive"),
+            punctuated![],
+        ),
+        call_method(
+            formatter_expression(),
+            new_identifier("finish"),
+            punctuated![],
+        ),
+    )));
+
+    statements
+}
+
+fn debug_field(field: NamedField, is_named: bool) -> Option<Stmt> {
+    let field::debug::Config { skip } = field.config.debug;
+
+    let mut args = if is_named {
+        punctuated![core_stringify(&field.name)]
     } else {
-        new_identifier("finish")
+        punctuated![]
     };
 
-    expression = call_method(expression, finish, Punctuated::new());
+    args.push(variable(field.name));
 
-    once(Stmt::Expr(expression, None))
+    (!skip.value).then(|| {
+        statement::new(call_method(
+            formatter_expression(),
+            new_identifier("field"),
+            args,
+        ))
+    })
+}
+
+pub fn bounds(item: &Algebraic) -> Punctuated<WherePredicate, Token![,]> {
+    let item::debug::Config {} = item.config().debug;
+
+    let mut bounds = Punctuated::new();
+
+    for variant in item.variants() {
+        let variant::debug::Config { non_exhaustive: _ } = variant.config.debug;
+
+        for field in variant.fields.clone().into_named() {
+            let field::debug::Config { skip } = field.config.debug;
+
+            if !skip.value {
+                bounds.push(bound_type(field.ty, Trait::Debug.path()));
+            }
+        }
+    }
+
+    bounds
 }

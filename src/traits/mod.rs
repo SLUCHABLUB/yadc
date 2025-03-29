@@ -4,11 +4,15 @@ mod list;
 
 pub use list::List;
 
+use crate::item::Algebraic;
 use crate::util::{path_attribute, token};
 use crate::{Parameterised, path};
 use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result};
+use syn::{
+    Error, Generics, ItemImpl, Path, PathArguments, PathSegment, Result, Token, WherePredicate,
+};
 
 fn automatically_derived() -> syn::Attribute {
     path_attribute(path::new(["automatically_derived"]))
@@ -21,14 +25,14 @@ pub enum Trait {
 }
 
 impl Trait {
-    pub fn implement(self, item: &Parameterised) -> ItemImpl {
+    pub fn implement(self, parameterised: &Parameterised) -> ItemImpl {
         let items = match self {
-            Trait::Debug => vec![debug::fmt(item).into()],
-            Trait::Hash => vec![hash::hash(item).into()],
+            Trait::Debug => vec![debug::fmt(parameterised).into()],
+            Trait::Hash => vec![hash::hash(parameterised).into()],
         };
 
-        let bounds = item.bound_all(self.path());
-        let where_clause = item.where_clause_with_bounds(bounds);
+        let bounds = self.bounds(&parameterised.item);
+        let where_clause = parameterised.where_clause_with_bounds(bounds);
 
         ItemImpl {
             attrs: vec![automatically_derived()],
@@ -37,21 +41,28 @@ impl Trait {
             impl_token: token![impl],
             generics: Generics {
                 lt_token: Some(token![<]),
-                params: item.parameters.clone(),
+                params: parameterised.parameters.clone(),
                 gt_token: Some(token![>]),
                 where_clause: Some(where_clause),
             },
             trait_: Some((None, self.path(), token![for])),
-            self_ty: Box::new(item.to_type()),
+            self_ty: Box::new(parameterised.to_type()),
             brace_token: token![{}],
             items,
         }
     }
 
-    pub fn path(&self) -> Path {
+    fn path(&self) -> Path {
         match self {
             Trait::Debug => path::core(["fmt", "Debug"]),
             Trait::Hash => path::core(["hash", "Hash"]),
+        }
+    }
+
+    fn bounds(&self, item: &Algebraic) -> Punctuated<WherePredicate, Token![,]> {
+        match self {
+            Trait::Debug => debug::bounds(item),
+            Trait::Hash => hash::bounds(item),
         }
     }
 }

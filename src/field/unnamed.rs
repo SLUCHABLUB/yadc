@@ -1,10 +1,10 @@
-use crate::{FieldConfig, NamedField};
+use crate::{NamedField, field};
 use quote::format_ident;
 use syn::{Error, Field, Result, Type};
 
 #[derive(Clone)]
 pub struct UnnamedField {
-    pub config: FieldConfig,
+    pub config: field::Config,
     pub ty: Type,
 }
 
@@ -23,7 +23,7 @@ impl TryFrom<Field> for UnnamedField {
 
     fn try_from(field: Field) -> Result<Self> {
         Ok(UnnamedField {
-            config: FieldConfig::try_from(field.attrs)?,
+            config: field::Config::try_from(field.attrs)?,
             ty: field.ty,
         })
     }

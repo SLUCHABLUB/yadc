@@ -1,5 +1,10 @@
-use crate::util::{self_expression, token};
-use crate::{Fields, VariantConfig, punctuated};
+mod config;
+
+pub use config::*;
+
+use crate::expression::self_;
+use crate::util::token;
+use crate::{Fields, punctuated};
 use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
 use syn::{
@@ -9,7 +14,7 @@ use syn::{
 
 /// A `struct` or an `enum` variant.
 pub struct Variant {
-    pub config: VariantConfig,
+    pub config: Config,
     pub name: Ident,
     pub fields: Fields,
 }
@@ -26,7 +31,7 @@ impl Variant {
             pat: self.pattern(None),
             init: Some(LocalInit {
                 eq_token: token![=],
-                expr: Box::new(self_expression()),
+                expr: Box::new(self_()),
                 diverge: None,
             }),
             semi_token: token![;],
@@ -95,7 +100,7 @@ impl TryFrom<ItemStruct> for Variant {
 
     fn try_from(item: ItemStruct) -> Result<Self> {
         Ok(Variant {
-            config: VariantConfig::try_from(item.attrs)?,
+            config: Config::try_from(item.attrs)?,
             name: item.ident,
             fields: Fields::try_from(item.fields)?,
         })
@@ -107,7 +112,7 @@ impl TryFrom<syn::Variant> for Variant {
 
     fn try_from(variant: syn::Variant) -> Result<Self> {
         Ok(Variant {
-            config: VariantConfig::try_from(variant.attrs)?,
+            config: Config::try_from(variant.attrs)?,
             name: variant.ident,
             fields: Fields::try_from(variant.fields)?,
         })

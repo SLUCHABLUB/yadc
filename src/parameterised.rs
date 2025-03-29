@@ -1,14 +1,12 @@
-use crate::util::{to_argument, token, type_named};
-use crate::{AlgebraicItem, TypeConfig, Variant, punctuated};
+use crate::util::{to_argument, token};
+use crate::{Algebraic, Variant, item, punctuated};
 use itertools::Itertools;
-use proc_macro2::Ident;
 use std::mem::take;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    AngleBracketedGenericArguments, Error, GenericArgument, GenericParam, Generics, Item, Path,
-    PathArguments, PathSegment, PredicateType, Token, TraitBound, TraitBoundModifier, Type,
-    TypeParamBound, TypePath, WhereClause, WherePredicate,
+    AngleBracketedGenericArguments, Error, GenericArgument, GenericParam, Generics, Ident, Item,
+    Path, PathArguments, PathSegment, Token, Type, TypePath, WhereClause, WherePredicate,
 };
 
 const BAD_ITEM_KIND: &str = "yadc can only implement traits for enums and structs";
@@ -16,7 +14,7 @@ const NON_EXHAUSTIVE: &str = "item kind is not recognised, please open an issue"
 
 /// An algebraic item with information about generics.
 pub struct Parameterised {
-    pub item: AlgebraicItem,
+    pub item: Algebraic,
     pub parameters: Punctuated<GenericParam, Token![,]>,
     pub where_stem: Punctuated<WherePredicate, Token![,]>,
 }
@@ -24,26 +22,6 @@ pub struct Parameterised {
 impl Parameterised {
     pub fn arguments(&self) -> Punctuated<GenericArgument, Token![,]> {
         self.parameters.iter().cloned().map(to_argument).collect()
-    }
-
-    pub fn bound_all(&self, trait_path: Path) -> Punctuated<WherePredicate, Token![,]> {
-        let bound = TypeParamBound::Trait(TraitBound {
-            paren_token: None,
-            modifier: TraitBoundModifier::None,
-            lifetimes: None,
-            path: trait_path,
-        });
-
-        self.type_arguments()
-            .map(|ty| {
-                WherePredicate::Type(PredicateType {
-                    lifetimes: None,
-                    bounded_ty: type_named(ty),
-                    colon_token: token![:],
-                    bounds: punctuated![bound.clone()],
-                })
-            })
-            .collect()
     }
 
     fn type_arguments(&self) -> impl Iterator<Item = Ident> {
@@ -134,18 +112,18 @@ impl TryFrom<Item> for Parameterised {
             Item::Enum(mut item) => {
                 let (parameters, where_stem) = extract(&mut item.generics);
                 Ok(Parameterised {
-                    item: AlgebraicItem::try_from(item)?,
+                    item: Algebraic::try_from(item)?,
                     parameters,
                     where_stem,
                 })
             }
             Item::Struct(mut item) => {
                 let (parameters, where_stem) = extract(&mut item.generics);
-                let config = TypeConfig::try_from(item.attrs.clone())?;
+                let config = item::Config::try_from(item.attrs.clone())?;
                 let variant = Variant::try_from(item)?;
 
                 Ok(Parameterised {
-                    item: AlgebraicItem::Struct { config, variant },
+                    item: Algebraic::Struct { config, variant },
                     parameters,
                     where_stem,
                 })

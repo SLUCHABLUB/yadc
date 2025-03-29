@@ -27,7 +27,7 @@ struct Alice();
 #[implement(Debug)]
 struct Bob {}
 
-#[derive(Debug)]
+#[implement(Debug)]
 struct Generic<'a, A, B: Copy> {
     a: &'a A,
     b: B,

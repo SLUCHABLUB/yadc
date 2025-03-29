@@ -1,6 +1,8 @@
+mod config;
 mod named;
 mod unnamed;
 
+pub use config::*;
 pub use named::NamedField;
 pub use unnamed::UnnamedField;
 
@@ -17,6 +19,7 @@ pub enum Fields {
 }
 
 impl Fields {
+    // FIXME
     pub fn into_named(self) -> Vec<NamedField> {
         match self {
             Fields::Named(named) => named,
