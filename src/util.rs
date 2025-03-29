@@ -1,3 +1,4 @@
+use crate::punctuated::punctuated;
 use crate::{expression, pattern};
 use proc_macro2::{Ident, Span, TokenStream};
 use syn::punctuated::Punctuated;
@@ -16,7 +17,6 @@ macro_rules! token {
 }
 
 // TODO: remove
-use crate::punctuated::punctuated;
 pub(crate) use token;
 
 pub fn new_identifier(string: &str) -> Ident {
