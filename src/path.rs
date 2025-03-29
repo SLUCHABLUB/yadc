@@ -1,31 +1,5 @@
-use crate::util::new_identifier;
-use crate::{punctuated, token};
-use proc_macro2::{Ident, Span};
-use syn::{Path, PathSegment};
-
-pub fn new<const N: usize>(segments: [&str; N]) -> Path {
-    Path {
-        leading_colon: None,
-        segments: segments
-            .into_iter()
-            .map(|name| PathSegment::from(Ident::new(name, Span::call_site())))
-            .collect(),
-    }
-}
-
-pub fn core<const N: usize>(segments: [&str; N]) -> Path {
-    let string = segments;
-    let mut segments = punctuated![PathSegment::from(new_identifier("core"))];
-
-    for string in string {
-        segments.push(PathSegment::from(new_identifier(string)));
-    }
-
-    Path {
-        leading_colon: Some(token![::]),
-        segments,
-    }
-}
+use proc_macro2::Ident;
+use syn::Path;
 
 pub fn into_identifier(mut path: Path) -> Option<Ident> {
     if path.leading_colon.is_some() || path.segments.len() != 1 {

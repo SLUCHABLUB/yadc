@@ -215,7 +215,7 @@ macro_rules! define_config {
                 };
 
                 if path.segments.len() == 1 {
-                    path.segments.push(syn::PathSegment::from(crate::util::new_identifier("value")));
+                    path.segments.push(syn::PathSegment::from(crate::identifier!(value)));
                 }
 
                 Builder::try_from(syn::MetaList {

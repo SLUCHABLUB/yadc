@@ -1,17 +1,11 @@
-use crate::punctuated::punctuated;
-use crate::{expression, pattern, token};
-use proc_macro2::{Ident, Span, TokenStream};
+use crate::{pattern, punctuated, token};
+use proc_macro2::{Ident, TokenStream};
 use syn::punctuated::Punctuated;
 use syn::{
-    Block, Expr, ExprCall, ExprMethodCall, ExprPath, ExprReference, FnArg, GenericArgument,
-    GenericParam, Generics, ImplItemFn, PatType, Path, PredicateType, ReturnType, Signature, Stmt,
-    Token, TraitBound, TraitBoundModifier, Type, TypeParamBound, TypePath, TypeReference,
-    TypeTuple, Visibility, WherePredicate,
+    Block, Expr, ExprPath, FnArg, GenericArgument, GenericParam, Generics, ImplItemFn, PatType,
+    Path, PredicateType, ReturnType, Signature, Stmt, TraitBound, TraitBoundModifier, Type,
+    TypeParamBound, TypePath, TypeReference, TypeTuple, Visibility, WherePredicate,
 };
-
-pub fn new_identifier(string: &str) -> Ident {
-    Ident::new(string, Span::call_site())
-}
 
 #[derive(Copy, Clone)]
 pub enum Receiver {
@@ -127,41 +121,11 @@ pub fn unit_type() -> Type {
     })
 }
 
-pub fn call_method(receiver: Expr, method: Ident, args: Punctuated<Expr, Token![,]>) -> Expr {
-    Expr::MethodCall(ExprMethodCall {
-        attrs: Vec::new(),
-        receiver: Box::new(receiver),
-        dot_token: token![.],
-        method,
-        turbofish: None,
-        paren_token: token![()],
-        args,
-    })
-}
-
 pub fn mutable_reference(referend: Type) -> Type {
     Type::Reference(TypeReference {
         and_token: token![&],
         lifetime: None,
         mutability: Some(token![mut]),
         elem: Box::new(referend),
-    })
-}
-
-pub fn call_function(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
-    Expr::Call(ExprCall {
-        attrs: Vec::new(),
-        func: Box::new(expression::path(function)),
-        paren_token: token![()],
-        args: arguments,
-    })
-}
-
-pub fn reference(referend: Expr) -> Expr {
-    Expr::Reference(ExprReference {
-        attrs: Vec::new(),
-        and_token: token![&],
-        mutability: None,
-        expr: Box::new(referend),
     })
 }

@@ -1,13 +1,11 @@
-use crate::expression::{if_else, variable};
+use crate::expression::{call_method, if_else, variable};
 use crate::item::Algebraic;
 use crate::statement::{implicit_return, let_mut};
 use crate::traits::Trait;
-use crate::util::{
-    Receiver, bound_type, call_method, mutable_reference, new_identifier, new_impl_fn,
-};
+use crate::util::{Receiver, bound_type, mutable_reference, new_impl_fn};
 use crate::{
-    Fields, NamedField, Parameterised, Variant, field, item, path, punctuated, statement, token,
-    variant,
+    Fields, NamedField, Parameterised, Variant, core_path, field, identifier, item, punctuated,
+    statement, token, variant,
 };
 use proc_macro2::Ident;
 use quote::{ToTokens, quote};
@@ -21,14 +19,14 @@ use syn::{
 fn core_fmt_result() -> Type {
     Type::Path(TypePath {
         qself: None,
-        path: path::core(["fmt", "Result"]),
+        path: core_path!(fmt::Result),
     })
 }
 
 /// `core::write!(f, ...)`
 fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
     let mac = Macro {
-        path: path::core(["write"]),
+        path: core_path!(write),
         bang_token: token![!],
         delimiter: MacroDelimiter::Paren(token![()]),
         tokens: quote!(f, #arguments),
@@ -43,7 +41,7 @@ fn core_write_f<T: ToTokens>(arguments: T) -> Stmt {
 /// `core::stringify!(...)`
 fn core_stringify<T: ToTokens>(value: T) -> Expr {
     let mac = Macro {
-        path: path::core(["stringify"]),
+        path: core_path!(stringify),
         bang_token: token![!],
         delimiter: MacroDelimiter::Paren(token![()]),
         tokens: value.into_token_stream(),
@@ -56,13 +54,13 @@ fn core_stringify<T: ToTokens>(value: T) -> Expr {
 }
 
 fn formatter_identifier() -> Ident {
-    new_identifier("f")
+    identifier!(f)
 }
 
 fn formatter_type() -> Type {
     mutable_reference(Type::Path(TypePath {
         qself: None,
-        path: path::core(["fmt", "Formatter"]),
+        path: core_path!(fmt::Formatter),
     }))
 }
 
@@ -76,7 +74,7 @@ pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
     let statements = parameterised.item.map_variants(debug_variant);
 
     new_impl_fn(
-        new_identifier("fmt"),
+        identifier!(fmt),
         Generics::default(),
         Receiver::Reference,
         [(formatter_identifier(), formatter_type())],
@@ -91,8 +89,8 @@ fn debug_variant(variant: &Variant) -> Vec<Stmt> {
     let variant::debug::Config { non_exhaustive } = &variant.config.debug;
 
     let debugger = match variant.fields {
-        Fields::Named(_) => new_identifier("debug_struct"),
-        Fields::Unnamed(_) => new_identifier("debug_tuple"),
+        Fields::Named(_) => identifier!(debug_struct),
+        Fields::Unnamed(_) => identifier!(debug_tuple),
         Fields::Unit => return vec![core_write_f(name_string)],
     };
     let is_named = matches!(variant.fields, Fields::Named(_));
@@ -113,14 +111,10 @@ fn debug_variant(variant: &Variant) -> Vec<Stmt> {
         non_exhaustive.clone(),
         call_method(
             formatter_expression(),
-            new_identifier("finish_non_exhaustive"),
+            identifier!(finish_non_exhaustive),
             punctuated![],
         ),
-        call_method(
-            formatter_expression(),
-            new_identifier("finish"),
-            punctuated![],
-        ),
+        call_method(formatter_expression(), identifier!(finish), punctuated![]),
     )));
 
     statements
@@ -140,7 +134,7 @@ fn debug_field(field: NamedField, is_named: bool) -> Option<Stmt> {
     (!skip.value).then(|| {
         statement::new(call_method(
             formatter_expression(),
-            new_identifier("field"),
+            identifier!(field),
             args,
         ))
     })

@@ -5,7 +5,7 @@ mod list;
 pub use list::List;
 
 use crate::item::Algebraic;
-use crate::{Parameterised, path, token};
+use crate::{Parameterised, core_path, token};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -50,8 +50,8 @@ impl Trait {
 
     fn path(&self) -> Path {
         match self {
-            Trait::Debug => path::core(["fmt", "Debug"]),
-            Trait::Hash => path::core(["hash", "Hash"]),
+            Trait::Debug => core_path!(fmt::Debug),
+            Trait::Hash => core_path!(hash::Hash),
         }
     }
 

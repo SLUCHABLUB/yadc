@@ -1,7 +1,11 @@
 use crate::statement::implicit_return;
-use crate::{path, token};
+use crate::{expression, identifier, token};
 use proc_macro2::{Ident, Span};
-use syn::{Block, Expr, ExprIf, ExprLit, ExprPath, Lit, LitBool, Path};
+use syn::punctuated::Punctuated;
+use syn::{
+    Block, Expr, ExprCall, ExprIf, ExprLit, ExprMethodCall, ExprPath, ExprReference, Lit, LitBool,
+    Path, Token,
+};
 
 pub fn variable(name: Ident) -> Expr {
     path(Path::from(name))
@@ -22,7 +26,7 @@ pub fn true_() -> Expr {
 }
 
 pub fn self_() -> Expr {
-    path(path::new(["self"]))
+    path(Path::from(identifier!(self)))
 }
 
 pub fn if_else(condition: Expr, then: Expr, otherwise: Expr) -> Expr {
@@ -43,5 +47,35 @@ pub fn path(path: Path) -> Expr {
         attrs: Vec::new(),
         qself: None,
         path,
+    })
+}
+
+pub fn reference(referend: Expr) -> Expr {
+    Expr::Reference(ExprReference {
+        attrs: Vec::new(),
+        and_token: token![&],
+        mutability: None,
+        expr: Box::new(referend),
+    })
+}
+
+pub fn call(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
+    Expr::Call(ExprCall {
+        attrs: Vec::new(),
+        func: Box::new(expression::path(function)),
+        paren_token: token![()],
+        args: arguments,
+    })
+}
+
+pub fn call_method(receiver: Expr, method: Ident, args: Punctuated<Expr, Token![,]>) -> Expr {
+    Expr::MethodCall(ExprMethodCall {
+        attrs: Vec::new(),
+        receiver: Box::new(receiver),
+        dot_token: token![.],
+        method,
+        turbofish: None,
+        paren_token: token![()],
+        args,
     })
 }

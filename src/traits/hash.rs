@@ -1,11 +1,9 @@
-use crate::expression::{self_, variable};
+use crate::expression::{call, reference, self_, variable};
 use crate::traits::Trait;
-use crate::util::{
-    Receiver, bound_type, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
-    type_named, unit_type,
-};
+use crate::util::{Receiver, bound_type, mutable_reference, new_impl_fn, type_named, unit_type};
 use crate::{
-    Algebraic, NamedField, Parameterised, Variant, field, item, path, punctuated, token, variant,
+    Algebraic, NamedField, Parameterised, Variant, core_path, field, identifier, item, punctuated,
+    token, variant,
 };
 use itertools::chain;
 use proc_macro2::Ident;
@@ -16,11 +14,11 @@ use syn::{
 };
 
 fn state_type() -> Type {
-    mutable_reference(type_named(new_identifier("H")))
+    mutable_reference(type_named(identifier!(H)))
 }
 
 fn state_identifier() -> Ident {
-    new_identifier("state")
+    identifier!(state)
 }
 
 fn state_expression() -> Expr {
@@ -31,7 +29,7 @@ pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
     let item::hash::Config {} = parameterised.item.config().hash;
 
     new_impl_fn(
-        new_identifier("hash"),
+        identifier!(hash),
         generics(),
         Receiver::Reference,
         [(state_identifier(), state_type())],
@@ -50,9 +48,9 @@ fn maybe_hash_discriminant(item: &Algebraic) -> Option<Stmt> {
         return None;
     }
 
-    let function = path::core(["mem", "discriminant"]);
+    let function = core_path!(mem::discriminant);
 
-    let discriminant = call_function(function, punctuated![self_()]);
+    let discriminant = call(function, punctuated![self_()]);
 
     Some(hash_expression(reference(discriminant)))
 }
@@ -76,9 +74,9 @@ fn hash_field(field: NamedField) -> Stmt {
 }
 
 fn hash_expression(expression: Expr) -> Stmt {
-    let function = path::core(["hash", "Hash", "hash"]);
+    let function = core_path!(hash::Hash::hash);
 
-    let expression = call_function(function, punctuated![expression, state_expression()]);
+    let expression = call(function, punctuated![expression, state_expression()]);
 
     Stmt::Expr(expression, Some(token![;]))
 }
@@ -89,12 +87,12 @@ fn generics() -> Generics {
         paren_token: None,
         modifier: TraitBoundModifier::None,
         lifetimes: None,
-        path: path::core(["hash", "Hasher"]),
+        path: core_path!(hash::Hasher),
     });
 
     let parameter = GenericParam::Type(TypeParam {
         attrs: Vec::new(),
-        ident: new_identifier("H"),
+        ident: identifier!(H),
         colon_token: Some(token![:]),
         bounds: punctuated![bound],
         eq_token: None,
