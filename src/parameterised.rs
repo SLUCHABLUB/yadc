@@ -1,5 +1,5 @@
-use crate::util::{to_argument, token};
-use crate::{Algebraic, Variant, item, punctuated};
+use crate::util::to_argument;
+use crate::{Algebraic, Variant, item, punctuated, token};
 use itertools::Itertools;
 use std::mem::take;
 use syn::punctuated::Punctuated;

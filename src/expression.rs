@@ -1,6 +1,5 @@
-use crate::path;
 use crate::statement::implicit_return;
-use crate::util::token;
+use crate::{path, token};
 use proc_macro2::{Ident, Span};
 use syn::{Block, Expr, ExprIf, ExprLit, ExprPath, Lit, LitBool, Path};
 

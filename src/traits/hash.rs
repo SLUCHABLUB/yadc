@@ -2,10 +2,10 @@ use crate::expression::{self_, variable};
 use crate::traits::Trait;
 use crate::util::{
     Receiver, bound_type, call_function, mutable_reference, new_identifier, new_impl_fn, reference,
-    token, type_named, unit_type,
+    type_named, unit_type,
 };
 use crate::{
-    Algebraic, NamedField, Parameterised, Variant, field, item, path, punctuated, variant,
+    Algebraic, NamedField, Parameterised, Variant, field, item, path, punctuated, token, variant,
 };
 use itertools::chain;
 use proc_macro2::Ident;

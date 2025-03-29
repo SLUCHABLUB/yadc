@@ -1,5 +1,5 @@
-use crate::punctuated;
-use crate::util::{new_identifier, token};
+use crate::util::new_identifier;
+use crate::{punctuated, token};
 use proc_macro2::{Ident, Span};
 use syn::{Path, PathSegment};
 

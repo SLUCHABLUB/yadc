@@ -1,5 +1,5 @@
 use crate::punctuated::punctuated;
-use crate::{expression, pattern};
+use crate::{expression, pattern, token};
 use proc_macro2::{Ident, Span, TokenStream};
 use syn::punctuated::Punctuated;
 use syn::{
@@ -8,16 +8,6 @@ use syn::{
     Token, TraitBound, TraitBoundModifier, Type, TypeParamBound, TypePath, TypeReference,
     TypeTuple, Visibility, WherePredicate,
 };
-
-macro_rules! token {
-    [()] => { syn::token::Paren::default() };
-    [[]] => { syn::token::Bracket::default() };
-    [{}] => { syn::token::Brace::default() };
-    [$token:tt] => { <syn::Token![$token]>::default() };
-}
-
-// TODO: remove
-pub(crate) use token;
 
 pub fn new_identifier(string: &str) -> Ident {
     Ident::new(string, Span::call_site())

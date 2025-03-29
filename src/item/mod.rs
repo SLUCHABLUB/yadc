@@ -4,9 +4,8 @@ mod remove_attributes;
 pub use config::*;
 pub use remove_attributes::remove_attributes;
 
-use crate::Variant;
 use crate::expression::self_;
-use crate::util::token;
+use crate::{Variant, token};
 use proc_macro2::Ident;
 use std::iter::from_fn;
 use syn::{Arm, Block, Error, Expr, ExprBlock, ExprMatch, ItemEnum, Result, Stmt};

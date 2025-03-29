@@ -5,8 +5,7 @@ mod list;
 pub use list::List;
 
 use crate::item::Algebraic;
-use crate::util::token;
-use crate::{Parameterised, path};
+use crate::{Parameterised, path, token};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;

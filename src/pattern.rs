@@ -1,4 +1,4 @@
-use crate::util::token;
+use crate::token;
 use proc_macro2::Ident;
 use syn::{Pat, PatIdent};
 

@@ -1,5 +1,4 @@
-use crate::pattern;
-use crate::util::token;
+use crate::{pattern, token};
 use proc_macro2::Ident;
 use syn::{Expr, Local, LocalInit, Stmt};
 

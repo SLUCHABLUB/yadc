@@ -13,6 +13,7 @@ mod path;
 mod pattern;
 mod punctuated;
 mod statement;
+mod token;
 mod traits;
 mod util;
 mod variant;
@@ -22,10 +23,10 @@ pub(crate) use field::{Fields, NamedField};
 pub(crate) use item::Algebraic;
 pub(crate) use parameterised::Parameterised;
 pub(crate) use punctuated::punctuated;
+pub(crate) use token::token;
 pub(crate) use traits::{List, Trait};
 pub(crate) use variant::Variant;
 
-use crate::item::remove_attributes;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{Item, Result, parse2};
@@ -49,7 +50,7 @@ fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream>
 
     let mut output_item = item.clone();
 
-    remove_attributes(&mut output_item);
+    item::remove_attributes(&mut output_item);
 
     // TODO: remove helper attributes
     let mut output = output_item.into_token_stream();

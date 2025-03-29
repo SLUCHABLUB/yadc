@@ -220,7 +220,7 @@ macro_rules! define_config {
 
                 Builder::try_from(syn::MetaList {
                     path,
-                    delimiter: syn::MacroDelimiter::Paren(crate::util::token![()]),
+                    delimiter: syn::MacroDelimiter::Paren(crate::token![()]),
                     tokens: expression.into_token_stream()
                 })
             }

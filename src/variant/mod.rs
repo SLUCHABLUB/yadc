@@ -3,8 +3,7 @@ mod config;
 pub use config::*;
 
 use crate::expression::self_;
-use crate::util::token;
-use crate::{Fields, punctuated};
+use crate::{Fields, punctuated, token};
 use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
 use syn::{

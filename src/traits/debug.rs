@@ -3,10 +3,11 @@ use crate::item::Algebraic;
 use crate::statement::{implicit_return, let_mut};
 use crate::traits::Trait;
 use crate::util::{
-    Receiver, bound_type, call_method, mutable_reference, new_identifier, new_impl_fn, token,
+    Receiver, bound_type, call_method, mutable_reference, new_identifier, new_impl_fn,
 };
 use crate::{
-    Fields, NamedField, Parameterised, Variant, field, item, path, punctuated, statement, variant,
+    Fields, NamedField, Parameterised, Variant, field, item, path, punctuated, statement, token,
+    variant,
 };
 use proc_macro2::Ident;
 use quote::{ToTokens, quote};
