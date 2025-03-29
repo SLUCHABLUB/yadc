@@ -1,7 +1,6 @@
-use proc_macro2::Span;
 use crate::{define_config};
-use syn::LitBool;
+use syn::{parse_quote, LitBool};
 
 define_config! {
-    skip: LitBool = LitBool::new(false, Span::call_site()),
+    skip: LitBool = parse_quote!(false),
 }

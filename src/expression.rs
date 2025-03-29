@@ -1,10 +1,10 @@
 use crate::statement::implicit_return;
-use crate::{expression, identifier, token};
-use proc_macro2::{Ident, Span};
+use crate::token;
+use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
 use syn::{
-    Block, Expr, ExprCall, ExprIf, ExprLit, ExprMethodCall, ExprPath, ExprReference, Lit, LitBool,
-    Path, Token,
+    Block, Expr, ExprCall, ExprIf, ExprMethodCall, ExprPath, ExprReference, Path, Token,
+    parse_quote,
 };
 
 pub fn variable(name: Ident) -> Expr {
@@ -12,21 +12,15 @@ pub fn variable(name: Ident) -> Expr {
 }
 
 pub fn false_() -> Expr {
-    Expr::Lit(ExprLit {
-        attrs: Vec::new(),
-        lit: Lit::Bool(LitBool::new(false, Span::call_site())),
-    })
+    parse_quote!(false)
 }
 
 pub fn true_() -> Expr {
-    Expr::Lit(ExprLit {
-        attrs: Vec::new(),
-        lit: Lit::Bool(LitBool::new(true, Span::call_site())),
-    })
+    parse_quote!(true)
 }
 
 pub fn self_() -> Expr {
-    path(Path::from(identifier!(self)))
+    parse_quote!(self)
 }
 
 pub fn if_else(condition: Expr, then: Expr, otherwise: Expr) -> Expr {
@@ -62,7 +56,7 @@ pub fn reference(referend: Expr) -> Expr {
 pub fn call(function: Path, arguments: Punctuated<Expr, Token![,]>) -> Expr {
     Expr::Call(ExprCall {
         attrs: Vec::new(),
-        func: Box::new(expression::path(function)),
+        func: Box::new(path(function)),
         paren_token: token![()],
         args: arguments,
     })
