@@ -31,7 +31,7 @@ impl<T: Parse> Parse for List<T> {
 
 impl<T: ToTokens> ToTokens for List<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.0.to_tokens(tokens)
+        self.0.to_tokens(tokens);
     }
 }
 
