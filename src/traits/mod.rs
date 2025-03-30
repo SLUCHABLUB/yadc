@@ -1,8 +1,5 @@
 mod debug;
 mod hash;
-mod list;
-
-pub use list::List;
 
 use crate::item::Algebraic;
 use crate::{Parameterised, core_path, token};

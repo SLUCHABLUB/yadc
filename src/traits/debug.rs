@@ -58,7 +58,7 @@ static FORMATTER: Value = value!(f: mutable_reference(type_path(core_path!(fmt::
 static BUILDER: Value = value!(builder: unit_type());
 
 pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
-    let item::debug::Config {} = parameterised.item.config().debug;
+    let item::debug::Config { bounds: _ } = parameterised.item.config().debug;
 
     let statements = parameterised.item.map_variants(debug_variant);
 
@@ -126,7 +126,11 @@ fn debug_field(field: NamedField, is_named: bool) -> Option<Stmt> {
 }
 
 pub fn bounds(item: &Algebraic) -> Punctuated<WherePredicate, Token![,]> {
-    let item::debug::Config {} = item.config().debug;
+    let item::debug::Config { bounds } = &item.config().debug;
+
+    if !bounds.is_empty() {
+        return bounds.clone().into();
+    }
 
     let mut bounds = Punctuated::new();
 

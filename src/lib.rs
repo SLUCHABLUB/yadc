@@ -7,6 +7,7 @@ mod error;
 mod expression;
 mod field;
 mod item;
+mod list;
 mod macros;
 mod metas;
 mod parameterised;
@@ -23,10 +24,11 @@ pub(crate) use field::{Fields, NamedField};
 pub(crate) use item::Algebraic;
 pub(crate) use macros::{core_path, identifier, punctuated, token};
 pub(crate) use parameterised::Parameterised;
-pub(crate) use traits::{List, Trait};
+pub(crate) use traits::Trait;
 pub(crate) use value::{Value, value};
 pub(crate) use variant::Variant;
 
+use crate::list::List;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{Item, Result, parse2};
@@ -45,7 +47,7 @@ pub fn implement(
 }
 
 fn implement_2(attribute: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    let traits = parse2::<List>(attribute)?;
+    let traits = parse2::<List<Trait>>(attribute)?;
     let item = parse2::<Item>(item)?;
 
     let mut output_item = item.clone();
