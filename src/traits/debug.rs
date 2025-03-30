@@ -1,13 +1,12 @@
 use crate::expression::{call_method, if_else, variable};
 use crate::item::Algebraic;
-use crate::statement::{implicit_return, let_mut};
+use crate::statement::implicit_return;
 use crate::traits::Trait;
-use crate::util::{Receiver, bound_type, mutable_reference, new_impl_fn};
+use crate::util::{Receiver, bound_type, mutable_reference, new_impl_fn, type_path, unit_type};
 use crate::{
-    Fields, NamedField, Parameterised, Variant, core_path, field, identifier, item, punctuated,
-    statement, token, variant,
+    Fields, NamedField, Parameterised, Value, Variant, core_path, field, identifier, item,
+    punctuated, statement, token, value, variant,
 };
-use proc_macro2::Ident;
 use quote::{ToTokens, quote};
 use syn::punctuated::Punctuated;
 use syn::{
@@ -53,20 +52,10 @@ fn core_stringify<T: ToTokens>(value: T) -> Expr {
     })
 }
 
-fn formatter_identifier() -> Ident {
-    identifier!(f)
-}
+static FORMATTER: Value = value!(f: mutable_reference(type_path(core_path!(fmt::Formatter))));
 
-fn formatter_type() -> Type {
-    mutable_reference(Type::Path(TypePath {
-        qself: None,
-        path: core_path!(fmt::Formatter),
-    }))
-}
-
-fn formatter_expression() -> Expr {
-    variable(formatter_identifier())
-}
+// the type is never used
+static BUILDER: Value = value!(builder: unit_type());
 
 pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
     let item::debug::Config {} = parameterised.item.config().debug;
@@ -77,7 +66,7 @@ pub fn fmt(parameterised: &Parameterised) -> ImplItemFn {
         identifier!(fmt),
         Generics::default(),
         Receiver::Reference,
-        [(formatter_identifier(), formatter_type())],
+        [&FORMATTER],
         core_fmt_result(),
         statements,
     )
@@ -97,10 +86,11 @@ fn debug_variant(variant: &Variant) -> Vec<Stmt> {
 
     let mut statements = Vec::new();
 
-    let builder = call_method(formatter_expression(), debugger, punctuated![name_string]);
+    let builder_constructor =
+        call_method(FORMATTER.expression(), debugger, punctuated![name_string]);
 
     // create the debug builder
-    statements.push(let_mut(formatter_identifier(), builder));
+    statements.push(BUILDER.let_mut(builder_constructor));
 
     for field in variant.fields.clone().into_named() {
         statements.extend(debug_field(field, is_named));
@@ -110,11 +100,11 @@ fn debug_variant(variant: &Variant) -> Vec<Stmt> {
     statements.push(implicit_return(if_else(
         non_exhaustive.clone(),
         call_method(
-            formatter_expression(),
+            BUILDER.expression(),
             identifier!(finish_non_exhaustive),
             punctuated![],
         ),
-        call_method(formatter_expression(), identifier!(finish), punctuated![]),
+        call_method(BUILDER.expression(), identifier!(finish), punctuated![]),
     )));
 
     statements
@@ -131,13 +121,8 @@ fn debug_field(field: NamedField, is_named: bool) -> Option<Stmt> {
 
     args.push(variable(field.name));
 
-    (!skip.value).then(|| {
-        statement::new(call_method(
-            formatter_expression(),
-            identifier!(field),
-            args,
-        ))
-    })
+    (!skip.value)
+        .then(|| statement::new(call_method(BUILDER.expression(), identifier!(field), args)))
 }
 
 pub fn bounds(item: &Algebraic) -> Punctuated<WherePredicate, Token![,]> {

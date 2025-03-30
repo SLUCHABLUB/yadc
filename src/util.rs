@@ -1,4 +1,4 @@
-use crate::{pattern, punctuated, token};
+use crate::{Value, pattern, punctuated, token};
 use proc_macro2::{Ident, TokenStream};
 use syn::punctuated::Punctuated;
 use syn::{
@@ -17,7 +17,7 @@ pub fn new_impl_fn<const PARAMETERS: usize, Statements>(
     name: Ident,
     generics: Generics,
     receiver: Receiver,
-    parameters: [(Ident, Type); PARAMETERS],
+    parameters: [&Value; PARAMETERS],
     return_type: Type,
     statements: Statements,
 ) -> ImplItemFn
@@ -39,12 +39,12 @@ where
         }
     }
 
-    for (parameter, ty) in parameters {
+    for value in parameters {
         inputs.push(FnArg::Typed(PatType {
             attrs: Vec::new(),
-            pat: Box::new(pattern::variable(parameter)),
+            pat: Box::new(pattern::variable(value.name())),
             colon_token: token![:],
-            ty: Box::new(ty),
+            ty: Box::new(value.ty()),
         }));
     }
 
@@ -88,11 +88,12 @@ pub fn bound_type(ty: Type, trait_bound: Path) -> WherePredicate {
     })
 }
 
+pub fn type_path(path: Path) -> Type {
+    Type::Path(TypePath { qself: None, path })
+}
+
 pub fn type_named(name: Ident) -> Type {
-    Type::Path(TypePath {
-        qself: None,
-        path: Path::from(name),
-    })
+    type_path(Path::from(name))
 }
 
 /// Extract the name from a generic parameter (converts it to an argument).

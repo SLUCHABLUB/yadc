@@ -15,6 +15,7 @@ mod pattern;
 mod statement;
 mod traits;
 mod util;
+mod value;
 mod variant;
 
 pub(crate) use config::define_config;
@@ -23,6 +24,7 @@ pub(crate) use item::Algebraic;
 pub(crate) use macros::{core_path, identifier, punctuated, token};
 pub(crate) use parameterised::Parameterised;
 pub(crate) use traits::{List, Trait};
+pub(crate) use value::{Value, value};
 pub(crate) use variant::Variant;
 
 use proc_macro2::TokenStream;

@@ -2,28 +2,17 @@ use crate::expression::{call, reference, self_, variable};
 use crate::traits::Trait;
 use crate::util::{Receiver, bound_type, mutable_reference, new_impl_fn, type_named, unit_type};
 use crate::{
-    Algebraic, NamedField, Parameterised, Variant, core_path, field, identifier, item, punctuated,
-    token, variant,
+    Algebraic, NamedField, Parameterised, Value, Variant, core_path, field, identifier, item,
+    punctuated, token, value, variant,
 };
 use itertools::chain;
-use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
 use syn::{
-    Expr, GenericParam, Generics, ImplItemFn, Stmt, Token, TraitBound, TraitBoundModifier, Type,
+    Expr, GenericParam, Generics, ImplItemFn, Stmt, Token, TraitBound, TraitBoundModifier,
     TypeParam, TypeParamBound, WherePredicate,
 };
 
-fn state_type() -> Type {
-    mutable_reference(type_named(identifier!(H)))
-}
-
-fn state_identifier() -> Ident {
-    identifier!(state)
-}
-
-fn state_expression() -> Expr {
-    variable(state_identifier())
-}
+static STATE: Value = value!(state: mutable_reference(type_named(identifier!(H))));
 
 pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
     let item::hash::Config {} = parameterised.item.config().hash;
@@ -32,7 +21,7 @@ pub fn hash(parameterised: &Parameterised) -> ImplItemFn {
         identifier!(hash),
         generics(),
         Receiver::Reference,
-        [(state_identifier(), state_type())],
+        [&STATE],
         unit_type(),
         chain(
             maybe_hash_discriminant(&parameterised.item),
@@ -76,7 +65,7 @@ fn hash_field(field: NamedField) -> Stmt {
 fn hash_expression(expression: Expr) -> Stmt {
     let function = core_path!(hash::Hash::hash);
 
-    let expression = call(function, punctuated![expression, state_expression()]);
+    let expression = call(function, punctuated![expression, STATE.expression()]);
 
     Stmt::Expr(expression, Some(token![;]))
 }

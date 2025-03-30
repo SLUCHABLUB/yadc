@@ -1,12 +1,13 @@
-use crate::util::to_argument;
+use crate::util::{to_argument, type_path};
 use crate::{Algebraic, Variant, item, punctuated, token};
 use itertools::Itertools;
+use proc_macro2::Ident;
 use std::mem::take;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    AngleBracketedGenericArguments, Error, GenericArgument, GenericParam, Generics, Ident, Item,
-    Path, PathArguments, PathSegment, Token, Type, TypePath, WhereClause, WherePredicate,
+    AngleBracketedGenericArguments, Error, GenericArgument, GenericParam, Generics, Item, Path,
+    PathArguments, PathSegment, Token, Type, WhereClause, WherePredicate,
 };
 
 const BAD_ITEM_KIND: &str = "yadc can only implement traits for enums and structs";
@@ -58,15 +59,12 @@ impl Parameterised {
             })
         };
 
-        Type::Path(TypePath {
-            qself: None,
-            path: Path {
-                leading_colon: None,
-                segments: punctuated![PathSegment {
-                    ident: self.item.name().clone(),
-                    arguments,
-                }],
-            },
+        type_path(Path {
+            leading_colon: None,
+            segments: punctuated![PathSegment {
+                ident: self.item.name().clone(),
+                arguments,
+            }],
         })
     }
 }
